@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="연립방정식을 행렬로 세우고, 가우스 소거법으로 풀고, 그 풀이가 어떤 기본행렬들의 곱이었는지까지 차례로 보여 주는 수업용 도구.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#129518;</text></svg>">
+<title>가우스 소거 실습실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@600&display=swap">
+
+<style>
+  /* ── 토큰 ──────────────────────────────────────────────────────────
+     옅은 청색으로 기운 중성색 + 만년필 잉크 블루.
+     pivot(선행성분)과 change(방금 바뀐 행)는 뜻이 정해진 색이라 UI 강조색과 따로 둔다. */
+  :root {
+    --ground:#F6F7FA; --surface:#FFFFFF; --sunk:#EEF1F6;
+    --ink:#151A24; --muted:#5D6577; --faint:#8B93A5;
+    --rule:#DDE1EA; --rule-2:#C4CBD8;
+    --accent:#2F4BC4; --accent-soft:#E6EAFA; --on-accent:#FFFFFF;
+    --pivot:#B2541A; --pivot-soft:#FBEEE2;
+    --change:#0E7C6B; --change-soft:#DFF1ED;
+    --bad:#A32A2A; --bad-soft:#FAE8E8;
+    --f-display:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+    --f-body:"IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif;
+    --f-mono:"IBM Plex Mono","D2Coding",ui-monospace,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#11141B; --surface:#171C26; --sunk:#1E2430;
+      --ink:#E7EAF2; --muted:#98A1B5; --faint:#6E7689;
+      --rule:#28303E; --rule-2:#3A4454;
+      --accent:#8CA4FF; --accent-soft:#232C47; --on-accent:#11141B;
+      --pivot:#E9954B; --pivot-soft:#35281B;
+      --change:#4FC3AC; --change-soft:#12302B;
+      --bad:#F0857F; --bad-soft:#38201F;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#11141B; --surface:#171C26; --sunk:#1E2430;
+    --ink:#E7EAF2; --muted:#98A1B5; --faint:#6E7689;
+    --rule:#28303E; --rule-2:#3A4454;
+    --accent:#8CA4FF; --accent-soft:#232C47; --on-accent:#11141B;
+    --pivot:#E9954B; --pivot-soft:#35281B;
+    --change:#4FC3AC; --change-soft:#12302B;
+    --bad:#F0857F; --bad-soft:#38201F;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--f-body); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .shell { max-width:960px; margin:0 auto; padding-inline:20px; padding-block:30px 72px; }
+
+  /* ── 머리글 + 막 이동 ───────────────────────────────────── */
+  header.top { border-bottom:2px solid var(--ink); padding-bottom:16px; }
+  .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:0 0 6px; }
+  h1 { font-family:var(--f-display); font-weight:600; font-size:clamp(27px,4.4vw,40px); line-height:1.18; margin:0; text-wrap:balance; letter-spacing:-.01em; }
+  .lede { margin:9px 0 0; color:var(--muted); max-width:62ch; }
+  .lede b { color:var(--ink); font-weight:600; }
+
+  nav.acts {
+    position:sticky; top:0; z-index:5; display:flex; gap:4px; flex-wrap:wrap;
+    background:var(--ground); border-bottom:1px solid var(--rule);
+    margin-bottom:34px; padding-block:9px;
+  }
+  nav.acts a {
+    text-decoration:none; color:var(--muted); font-size:13px; font-weight:500;
+    padding:5px 11px; border-radius:7px; border:1px solid transparent;
+  }
+  nav.acts a:hover { background:var(--sunk); }
+  nav.acts a[aria-current="true"] { background:var(--accent-soft); color:var(--accent); font-weight:600; border-color:var(--accent); }
+
+  /* ── 막 ─────────────────────────────────────────────────── */
+  section.act { scroll-margin-top:56px; }
+  section.act + section.act { margin-top:52px; }
+  .act-head { display:flex; align-items:baseline; gap:12px; border-bottom:1px solid var(--rule); padding-bottom:8px; margin-bottom:20px; }
+  .act-head .no {
+    font-family:var(--f-display); font-size:13px; font-weight:600; color:var(--on-accent);
+    background:var(--accent); width:24px; height:24px; border-radius:50%;
+    display:inline-grid; place-items:center; flex:none; align-self:center;
+  }
+  .act-head h2 { font-family:var(--f-display); font-size:19px; font-weight:600; margin:0; letter-spacing:.01em; }
+  .act-head .sub { font-size:12.5px; color:var(--faint); margin-left:auto; text-align:right; }
+
+  h3.mini { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:600; margin:0 0 10px; }
+
+  /* ── 행렬 ───────────────────────────────────────────────── */
+  .mat { display:inline-block; position:relative; padding:6px 13px; font-family:var(--f-mono); font-variant-numeric:tabular-nums; line-height:1.5; vertical-align:middle; }
+  .mat::before,.mat::after { content:""; position:absolute; top:0; bottom:0; width:7px; border:2px solid var(--rule-2); pointer-events:none; }
+  .mat::before { left:0; border-right:0; }
+  .mat::after { right:0; border-left:0; }
+  .mat .grid { display:grid; gap:2px 0; }
+  .mat .cell { padding:2px 9px; text-align:right; min-width:2.2em; border-radius:3px; transition:background-color .18s ease; }
+  .mat .cell.augline { border-left:1px solid var(--rule-2); margin-left:6px; padding-left:13px; }
+  .mat .cell.pivot { color:var(--pivot); background:var(--pivot-soft); font-weight:600; }
+  .mat .cell.moved { color:var(--change); background:var(--change-soft); }
+  .mat .cell.sym { color:var(--accent); text-align:center; }
+  .mat.small { font-size:12.5px; padding:4px 10px; }
+  .mat.small .cell { padding:1px 6px; min-width:1.8em; }
+  .mat.small::before,.mat.small::after { width:5px; }
+  @media (prefers-reduced-motion: reduce) { .mat .cell { transition:none; } }
+
+  .frac { display:inline-flex; flex-direction:column; align-items:center; vertical-align:-0.45em; line-height:1.05; }
+  .frac .n { font-size:.78em; padding:0 .12em; }
+  .frac .d { font-size:.78em; padding:0 .12em; border-top:1px solid currentColor; }
+
+  /* ── 1막: 식 → 행렬 ─────────────────────────────────────── */
+  .flow { display:flex; flex-direction:column; gap:0; }
+  .flow-step { background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:18px 20px; }
+  .flow-arrow { display:flex; align-items:center; gap:10px; padding:10px 20px; color:var(--muted); font-size:12.5px; }
+  .flow-arrow::before { content:"\2193"; font-family:var(--f-mono); font-size:16px; color:var(--accent); }
+  .flow-step .cap { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:0 0 12px; }
+
+  .eqs {
+    display:inline-grid; gap:3px 5px; font-family:var(--f-mono);
+    font-variant-numeric:tabular-nums; font-size:15.5px; align-items:baseline;
+  }
+  .eqs .op { text-align:center; color:var(--muted); min-width:1em; }
+  .eqs .term { text-align:right; white-space:nowrap; }
+  .eqs .rhs { text-align:right; font-weight:600; }
+
+  .lineup { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .lineup .sign { font-family:var(--f-mono); font-size:19px; color:var(--muted); }
+  .tagged { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .tagged .tag { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); }
+  .tagged .tag.e { color:var(--accent); }
+
+  details.editor { margin-top:16px; border:1px solid var(--rule); border-radius:10px; background:var(--surface); }
+  details.editor summary { cursor:pointer; padding:11px 16px; font-size:13px; font-weight:500; color:var(--muted); list-style:none; }
+  details.editor summary::-webkit-details-marker { display:none; }
+  details.editor summary::before { content:"\25B8 "; color:var(--accent); }
+  details.editor[open] summary::before { content:"\25BE "; }
+  details.editor .body { padding:0 16px 16px; }
+  .cellgrid { display:grid; gap:5px; max-width:420px; }
+  .cellgrid input { font-family:var(--f-mono); font-size:13px; text-align:center; width:100%; padding:6px 2px; border:1px solid var(--rule); border-radius:5px; background:var(--sunk); color:var(--ink); }
+  .cellgrid input.augcol { background:var(--accent-soft); border-color:var(--accent); }
+  .cellgrid input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+
+  /* ── 2막: 소거 ──────────────────────────────────────────── */
+  .stage { background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:20px; box-shadow:0 1px 2px rgb(21 26 36 / .05); }
+  .equation { display:flex; align-items:center; gap:14px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px; }
+  .equation .sign { font-family:var(--f-mono); font-size:19px; color:var(--muted); flex:none; }
+  .equation .tagged { flex:none; }
+  .opline { font-family:var(--f-mono); font-size:15px; font-weight:600; display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .opline .num { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--accent); color:var(--on-accent); font-size:12px; font-family:var(--f-body); font-weight:600; }
+  .opline .kind { font-family:var(--f-body); font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--muted); border:1px solid var(--rule-2); border-radius:999px; padding:1px 9px; }
+  .scrub { display:flex; align-items:center; gap:10px; margin-top:18px; padding-top:16px; border-top:1px solid var(--rule); flex-wrap:wrap; }
+  .scrub input[type=range] { flex:1 1 180px; min-width:140px; accent-color:var(--accent); }
+  .scrub .count { font-family:var(--f-mono); font-size:12.5px; color:var(--muted); white-space:nowrap; }
+
+  ol.tape { list-style:none; margin:20px 0 0; padding:0; }
+  ol.tape li { border-bottom:1px solid var(--rule); }
+  ol.tape li:first-child { border-top:1px solid var(--rule); }
+  ol.tape button.tapeitem { display:flex; align-items:center; gap:12px; width:100%; text-align:left; border:0; border-radius:0; background:none; padding:8px; }
+  ol.tape button.tapeitem:hover { background:var(--sunk); }
+  ol.tape button.tapeitem[aria-current="true"] { background:var(--accent-soft); }
+  ol.tape .idx { font-family:var(--f-mono); font-size:12px; color:var(--faint); width:1.6em; flex:none; }
+  ol.tape .note { font-family:var(--f-mono); font-size:13px; flex:1; }
+  ol.tape .ename { font-size:11px; color:var(--accent); font-family:var(--f-mono); flex:none; }
+
+  /* ── 3막: 기본행렬의 곱 ─────────────────────────────────── */
+  .legend { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; margin-bottom:26px; }
+  .legend .item { display:flex; gap:12px; align-items:center; }
+  .legend .txt { font-size:12.5px; color:var(--muted); }
+  .legend .txt strong { display:block; color:var(--ink); font-size:13px; font-weight:600; }
+  .legend .txt .not { font-family:var(--f-mono); color:var(--ink); }
+
+  ol.chain { list-style:none; margin:0; padding:0; }
+  ol.chain li { border-bottom:1px solid var(--rule); }
+  ol.chain li:first-child { border-top:1px solid var(--rule); }
+  ol.chain button.link {
+    display:flex; align-items:center; gap:16px; width:100%; text-align:left;
+    border:0; border-radius:0; background:none; padding:10px 8px; flex-wrap:wrap;
+  }
+  ol.chain button.link:hover { background:var(--sunk); }
+  ol.chain button.link[aria-current="true"] { background:var(--accent-soft); }
+  ol.chain .k { font-family:var(--f-mono); font-size:12px; color:var(--faint); width:3.4em; flex:none; }
+  ol.chain .expr { font-family:var(--f-mono); font-size:13px; color:var(--accent); flex:1 1 180px; min-width:140px; }
+  ol.chain .res { flex:none; }
+
+  /* ── 공통 ───────────────────────────────────────────────── */
+  button { font:inherit; font-size:13px; font-weight:500; cursor:pointer; background:var(--surface); color:var(--ink); border:1px solid var(--rule-2); border-radius:7px; padding:6px 12px; transition:background-color .15s ease,border-color .15s ease; }
+  button:hover:not(:disabled) { background:var(--sunk); border-color:var(--faint); }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  button.primary:hover:not(:disabled) { filter:brightness(1.08); background:var(--accent); }
+  button.icon { padding:6px 10px; font-family:var(--f-mono); }
+  :where(button,input,select,a,summary):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .row { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .toolbar .divider { width:1px; align-self:stretch; background:var(--rule); margin-inline:4px; }
+  #types button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); font-weight:600; }
+  .seg { display:inline-flex; border:1px solid var(--rule-2); border-radius:7px; overflow:hidden; }
+  .seg button { border:0; border-radius:0; padding:5px 11px; background:var(--surface); }
+  .seg button + button { border-left:1px solid var(--rule-2); }
+  .seg button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  input[type=text], select { font:inherit; font-size:13px; background:var(--surface); color:var(--ink); border:1px solid var(--rule-2); border-radius:6px; padding:5px 8px; }
+  label.field { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--muted); }
+
+  .verdict { display:inline-flex; align-items:center; gap:7px; font-weight:600; font-size:13px; border-radius:999px; padding:3px 12px; margin-bottom:12px; }
+  .verdict.one { background:var(--change-soft); color:var(--change); }
+  .verdict.many { background:var(--accent-soft); color:var(--accent); }
+  .verdict.none { background:var(--bad-soft); color:var(--bad); }
+  .sol { font-family:var(--f-mono); font-size:14.5px; display:flex; flex-direction:column; gap:4px; margin:0 0 12px; }
+  .meta { font-size:12.5px; color:var(--muted); margin:0; }
+  .meta code { font-family:var(--f-mono); color:var(--ink); background:var(--sunk); padding:0 4px; border-radius:3px; }
+  .insight { border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 15px; border-radius:0 7px 7px 0; font-size:13.5px; margin-top:18px; }
+  .insight b { font-weight:600; }
+  .panel { background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:18px 20px; }
+  footer.bot { margin-top:52px; padding-top:14px; border-top:1px solid var(--rule); font-size:12px; color:var(--faint); }
+</style>
+<style>
+  /* 단독 문서로 열릴 때 필요한 최소 보정 */
+  [hidden] { display: none !important; }
+  img { max-width: 100%; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <p class="eyebrow">선형대수 · 행 줄이기</p>
+    <h1>가우스 소거 실습실</h1>
+    <p class="lede">
+      연립방정식을 <b>행렬로 세우고</b>, <b>소거해서 풀고</b>, 그 풀이가 결국
+      <b>어떤 기본행렬들의 곱</b>이었는지까지 차례로 따라갑니다. 계산은 전부 분수로 정확히 합니다.
+    </p>
+  </header>
+
+  <nav class="acts" id="actnav">
+    <a href="#act1">① 연립방정식을 행렬로</a>
+    <a href="#act2">② 가우스 소거법으로 풀기</a>
+    <a href="#act3">③ 기본행렬의 곱으로</a>
+  </nav>
+
+  <!-- ══ 1막 ══════════════════════════════════════════════ -->
+  <section class="act" id="act1">
+    <div class="act-head">
+      <span class="no">1</span>
+      <h2>연립방정식을 행렬로</h2>
+      <span class="sub">미지수의 계수만 뽑아 적는다</span>
+    </div>
+
+    <div class="toolbar">
+      <span id="types" class="row"></span>
+      <button class="primary" id="btnRoll">다시 뽑기</button>
+      <span class="divider"></span>
+      <label class="field">미지수 <select id="selN"></select></label>
+      <label class="field">식 <select id="selM"></select></label>
+    </div>
+    <p class="meta" id="typeNote" style="margin:-10px 0 18px"></p>
+
+    <div class="flow" id="flow"></div>
+
+    <details class="editor">
+      <summary>숫자를 직접 고치기</summary>
+      <div class="body">
+        <div class="cellgrid" id="cellgrid"></div>
+        <p class="meta" style="margin-top:9px">
+          <code>3</code> <code>-1/2</code> <code>0.25</code> 모두 됩니다 ·
+          <label class="field" style="display:inline-flex;margin-left:8px">
+            <input type="checkbox" id="chkAug" checked> 첨가행렬(우변 포함)
+          </label>
+        </p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ══ 2막 ══════════════════════════════════════════════ -->
+  <section class="act" id="act2">
+    <div class="act-head">
+      <span class="no">2</span>
+      <h2>가우스 소거법으로 풀기</h2>
+      <span class="sub" id="stageHint"></span>
+    </div>
+
+    <div class="toolbar">
+      <span class="seg" id="segGoal">
+        <button data-goal="ref" aria-pressed="false">행사다리꼴</button>
+        <button data-goal="rref" aria-pressed="true">기약행사다리꼴</button>
+      </span>
+      <span class="seg" id="segMode">
+        <button data-mode="auto" aria-pressed="true">자동</button>
+        <button data-mode="manual" aria-pressed="false">직접</button>
+      </span>
+      <span class="meta" id="modeNote"></span>
+    </div>
+
+    <div class="stage">
+      <div class="opline" id="opline"></div>
+      <div class="equation" id="equation"></div>
+      <div class="scrub">
+        <button class="icon" id="btnFirst" title="처음으로">&#9198;</button>
+        <button class="icon" id="btnPrev" title="이전 단계">&#9664;</button>
+        <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="단계 이동">
+        <button class="icon" id="btnNext" title="다음 단계">&#9654;</button>
+        <button class="icon" id="btnLast" title="끝까지">&#9197;</button>
+        <span class="count" id="count"></span>
+      </div>
+    </div>
+
+    <div id="manualBlock" class="panel" style="margin-top:16px" hidden>
+      <h3 class="mini">직접 연산</h3>
+      <div class="row" style="margin-bottom:8px">
+        <select id="opType">
+          <option value="swap">두 행 교환</option>
+          <option value="scale">한 행에 곱하기</option>
+          <option value="add">한 행에 다른 행의 배를 더하기</option>
+        </select>
+        <span class="row" id="opArgs"></span>
+        <button class="primary" id="btnApply">적용</button>
+        <button id="btnUndo">한 단계 지우기</button>
+      </div>
+      <p class="meta" id="opError" style="color:var(--bad)"></p>
+    </div>
+
+    <h3 class="mini" style="margin-top:26px">단계 기록</h3>
+    <ol class="tape" id="tape"></ol>
+
+    <h3 class="mini" style="margin-top:26px">해</h3>
+    <div id="solution"></div>
+  </section>
+
+  <!-- ══ 3막 ══════════════════════════════════════════════ -->
+  <section class="act" id="act3">
+    <div class="act-head">
+      <span class="no">3</span>
+      <h2>기본행렬의 곱으로</h2>
+      <span class="sub">행연산 한 번 = 기본행렬 한 번 곱하기</span>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <h3 class="mini">한 단계씩 쌓이는 곱</h3>
+    <ol class="chain" id="chain"></ol>
+
+    <div id="product" style="margin-top:24px"></div>
+  </section>
+
+  <footer class="bot">
+    모든 계산은 이 페이지 안에서 분수로 이루어집니다 · 행 번호는 1부터 셉니다
+  </footer>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   1. 유리수 — 부동소수점을 쓰지 않아야 1/3 이 0.3333 으로 새지 않는다.
+   ═══════════════════════════════════════════════════════════════ */
+const MINUS = "−";
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function R(n, d = 1) {
+  if (d === 0) throw new Error("0으로 나눌 수 없습니다");
+  if (d < 0) { n = -n; d = -d; }
+  const g = gcd(n, d);
+  return { n: n / g, d: d / g };
+}
+const rAdd = (a, b) => R(a.n * b.d + b.n * a.d, a.d * b.d);
+const rMul = (a, b) => R(a.n * b.n, a.d * b.d);
+const rDiv = (a, b) => R(a.n * b.d, a.d * b.n);
+const rNeg = (a) => R(-a.n, a.d);
+const rZero = (a) => a.n === 0;
+const rIs = (a, k) => a.d === 1 && a.n === k;
+const rEq = (a, b) => a.n === b.n && a.d === b.d;
+const rSize = (a) => Math.abs(a.n) + a.d;
+
+function parseEntry(raw) {
+  const s = String(raw).trim().replace(/[−–—]/g, "-").replace(/\s+/g, "");
+  if (s === "" || s === "-") return R(0);
+  let m = s.match(/^(-?\d+)\/(-?\d+)$/);
+  if (m) { if (+m[2] === 0) return null; return R(+m[1], +m[2]); }
+  m = s.match(/^(-?)(\d*)\.(\d+)$/);
+  if (m) return R((m[1] === "-" ? -1 : 1) * Number((m[2] || "0") + m[3]), Math.pow(10, m[3].length));
+  if (/^-?\d+$/.test(s)) return R(+s);
+  return null;
+}
+function fmt(r) {
+  const sign = r.n < 0 ? MINUS : "";
+  const n = Math.abs(r.n);
+  if (r.d === 1) return sign + n;
+  return sign + '<span class="frac"><span class="n">' + n + '</span><span class="d">' + r.d + "</span></span>";
+}
+const coef = (r) => (rIs(r, 1) ? "" : fmt(r));
+
+/* ═══════════════════════════════════════════════════════════════
+   2. 행렬과 기본행렬
+   ═══════════════════════════════════════════════════════════════ */
+const clone = (M) => M.map((row) => row.map((x) => ({ n: x.n, d: x.d })));
+const eye = (m) => Array.from({ length: m }, (_, i) => Array.from({ length: m }, (_, j) => R(i === j ? 1 : 0)));
+function matMul(A, B) {
+  const m = A.length, k = B.length, n = B[0].length;
+  return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => {
+    let s = R(0);
+    for (let t = 0; t < k; t++) s = rAdd(s, rMul(A[i][t], B[t][j]));
+    return s;
+  }));
+}
+function elemMatrix(op, m) {
+  const E = eye(m);
+  if (op.t === "swap") { const tmp = E[op.i]; E[op.i] = E[op.j]; E[op.j] = tmp; }
+  else if (op.t === "scale") E[op.i][op.i] = op.c;
+  else if (op.t === "add") E[op.i][op.j] = op.c;
+  return E;
+}
+/** 기본행렬의 역 — 되돌리는 연산도 다시 기본행렬이다. */
+const invOp = (op) => op.t === "swap" ? op : op.t === "scale" ? { ...op, c: rDiv(R(1), op.c) } : { ...op, c: rNeg(op.c) };
+
+function applyOp(M, op) {
+  const N = clone(M);
+  if (op.t === "swap") { const tmp = N[op.i]; N[op.i] = N[op.j]; N[op.j] = tmp; }
+  else if (op.t === "scale") N[op.i] = N[op.i].map((x) => rMul(x, op.c));
+  else if (op.t === "add") N[op.i] = N[op.i].map((x, k) => rAdd(x, rMul(op.c, N[op.j][k])));
+  return N;
+}
+
+const SUB = "₀₁₂₃₄₅₆₇₈₉";
+const subs = (k) => String(k).split("").map((d) => SUB[+d]).join("");
+const rowName = (i) => "R" + subs(i + 1);
+const xName = (j) => "x" + subs(j + 1);
+
+function opText(op) {
+  if (op.t === "swap") return rowName(op.i) + " ↔ " + rowName(op.j);
+  if (op.t === "scale") return rowName(op.i) + " → " + coef(op.c) + rowName(op.i);
+  const neg = op.c.n < 0;
+  const abs = neg ? rNeg(op.c) : op.c;
+  return rowName(op.i) + " → " + rowName(op.i) + (neg ? " " + MINUS + " " : " + ") + coef(abs) + rowName(op.j);
+}
+const OP_KIND = { swap: "교환", scale: "상수배", add: "덧셈" };
+function eName(op) {
+  const b = op.t === "scale" ? op.i : op.j;
+  const sub = subs(op.i + 1) + subs(b + 1);
+  return (op.t === "swap" ? "P" : op.t === "scale" ? "D" : "E") + sub;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. 소거
+   ═══════════════════════════════════════════════════════════════ */
+function eliminate(A0, nUnknowns, goal) {
+  const m = A0.length;
+  let M = clone(A0);
+  const steps = [];
+  const push = (op) => {
+    const before = M;
+    M = applyOp(M, op);
+    steps.push({ op, before, after: M, E: elemMatrix(op, m) });
+  };
+  const pivots = [];
+  let r = 0;
+  for (let c = 0; c < nUnknowns && r < m; c++) {
+    let best = -1;
+    for (let i = r; i < m; i++) {
+      if (rZero(M[i][c])) continue;
+      if (best < 0 || rSize(M[i][c]) < rSize(M[best][c])) best = i;
+    }
+    if (best < 0) continue;
+    if (best !== r) push({ t: "swap", i: r, j: best });
+    if (!rIs(M[r][c], 1)) push({ t: "scale", i: r, c: rDiv(R(1), M[r][c]) });
+    for (let i = r + 1; i < m; i++) if (!rZero(M[i][c])) push({ t: "add", i, j: r, c: rNeg(M[i][c]) });
+    pivots.push({ row: r, col: c });
+    r++;
+  }
+  if (goal === "rref") {
+    for (let k = pivots.length - 1; k >= 0; k--) {
+      const { row, col } = pivots[k];
+      for (let i = row - 1; i >= 0; i--) if (!rZero(M[i][col])) push({ t: "add", i, j: row, c: rNeg(M[i][col]) });
+    }
+  }
+  return steps;
+}
+function pivotsOf(M, nUnknowns) {
+  const out = []; let lastCol = -1;
+  for (let i = 0; i < M.length; i++) {
+    for (let c = 0; c < nUnknowns; c++) {
+      if (!rZero(M[i][c])) { if (c > lastCol) { out.push([i, c]); lastCol = c; } break; }
+    }
+  }
+  return out;
+}
+function analyze(A0, nUnknowns, aug) {
+  const steps = eliminate(A0, nUnknowns, "rref");
+  const Rf = steps.length ? steps[steps.length - 1].after : clone(A0);
+  const piv = []; let bad = false;
+  for (let i = 0; i < Rf.length; i++) {
+    let c = 0;
+    while (c < Rf[i].length && rZero(Rf[i][c])) c++;
+    if (c === Rf[i].length) continue;
+    if (aug && c === nUnknowns) { bad = true; continue; }
+    piv.push({ row: i, col: c });
+  }
+  const pivCols = piv.map((p) => p.col);
+  const free = [];
+  for (let c = 0; c < nUnknowns; c++) if (!pivCols.includes(c)) free.push(c);
+  return { rref: Rf, pivots: piv, rank: piv.length, free, inconsistent: bad };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   4. 그리기 도우미
+   ═══════════════════════════════════════════════════════════════ */
+function matHTML(M, opts = {}) {
+  const { aug = 0, pivots = [], changed = null, small = false } = opts;
+  const cols = M[0].length;
+  const pset = new Set(pivots.map(([i, c]) => i + ":" + c));
+  let html = '<span class="mat' + (small ? " small" : "") + '"><span class="grid" style="grid-template-columns:repeat(' + cols + ',auto)">';
+  for (let i = 0; i < M.length; i++) {
+    for (let c = 0; c < cols; c++) {
+      const cls = ["cell"];
+      if (aug && c === cols - 1) cls.push("augline");
+      if (pset.has(i + ":" + c)) cls.push("pivot");
+      else if (changed && changed.has(i)) cls.push("moved");
+      html += '<span class="' + cls.join(" ") + '">' + fmt(M[i][c]) + "</span>";
+    }
+  }
+  return html + "</span></span>";
+}
+/** 미지수 벡터처럼 글자만 든 세로 행렬 */
+function symColHTML(labels, small) {
+  return '<span class="mat' + (small ? " small" : "") + '"><span class="grid" style="grid-template-columns:auto">' +
+    labels.map((s) => '<span class="cell sym">' + s + "</span>").join("") + "</span></span>";
+}
+const tagged = (tag, body, isE) =>
+  '<div class="tagged"><span class="tag' + (isE ? " e" : "") + '">' + tag + "</span>" + body + "</div>";
+const el = (id) => document.getElementById(id);
+
+/* ═══════════════════════════════════════════════════════════════
+   5. 문제 만들기 — 답에서 거꾸로 만들어 매번 달라도 깔끔하게 떨어진다.
+   ═══════════════════════════════════════════════════════════════ */
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const maxAbs = (rows) => Math.max(...rows.flat().map(Math.abs));
+const dot = (r, x) => r.reduce((s, v, t) => s + v * x[t], 0);
+
+function unimodular(n, count) {
+  const A = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+  for (let k = 0; k < count; k++) {
+    let i = ri(0, n - 1), j = ri(0, n - 1);
+    while (j === i) j = ri(0, n - 1);
+    if (n > 1 && Math.random() < 0.18) { const t = A[i]; A[i] = A[j]; A[j] = t; }
+    else { const c = pick([-2, -1, 1, 2]); A[i] = A[i].map((v, t) => v + c * A[j][t]); }
+  }
+  return A;
+}
+const rankOfInt = (rows, n) => analyze(rows.map((r) => r.slice(0, n).map((v) => R(v))), n, false).rank;
+function nonZeroVector(n) {
+  const x = Array.from({ length: n }, () => ri(-3, 3));
+  if (x.every((v) => v === 0)) x[ri(0, n - 1)] = pick([1, -1, 2]);
+  return x;
+}
+const asGrid = (rows, b, aug) => rows.map((r, i) => (aug ? [...r, b[i]] : r).map(String));
+
+function genUnique(n, m, frac) {
+  m = Math.max(m, n);
+  for (let t = 0; t < 300; t++) {
+    const base = unimodular(n, n + 2);
+    if (frac) {
+      const seen = new Set();
+      for (let k = 0, want = ri(1, Math.min(2, n)); k < want; k++) {
+        let i; do { i = ri(0, n - 1); } while (seen.has(i));
+        seen.add(i);
+        base[i] = base[i].map((v) => v * pick([2, 3, -2]));
+      }
+    }
+    const rows = base.map((r) => r.slice());
+    while (rows.length < m) {
+      const i = ri(0, n - 1), j = ri(0, n - 1);
+      const c1 = pick([1, -1, 2]), c2 = pick([0, 1, -1]);
+      rows.push(base[i].map((v, k) => c1 * v + c2 * base[j][k]));
+    }
+    if (maxAbs(rows) > 9) continue;
+    if (frac && rows.every((r) => r.every((v) => Math.abs(v) <= 1))) continue;
+    const x = nonZeroVector(n);
+    const b = rows.map((r) => dot(r, x));
+    if (maxAbs([b]) > 40) continue;
+    return { n, m, aug: true, v: asGrid(rows, b, true) };
+  }
+  const f = unimodular(n, n);
+  return { n, m: n, aug: true, v: asGrid(f, f.map(() => 0), true) };
+}
+function dependentRows(base, n, m) {
+  const rows = base.map((x) => x.slice());
+  while (rows.length < m) {
+    const c = base.map(() => pick([0, 1, -1, 2]));
+    if (c.every((v) => v === 0)) c[0] = 1;
+    rows.push(Array.from({ length: n }, (_, k) => base.reduce((s, br, q) => s + c[q] * br[k], 0)));
+  }
+  return rows;
+}
+function genMany(n, m) {
+  n = Math.max(2, n); m = Math.max(2, m);
+  const r = Math.max(1, Math.min(n - 1, m - 1));
+  for (let t = 0; t < 300; t++) {
+    const base = Array.from({ length: r }, () => Array.from({ length: n }, () => ri(-3, 3)));
+    if (rankOfInt(base, n) !== r) continue;
+    const rows = dependentRows(base, n, m);
+    if (maxAbs(rows) > 9) continue;
+    const x = nonZeroVector(n);
+    const b = rows.map((row) => dot(row, x));
+    if (maxAbs([b]) > 40) continue;
+    return { n, m, aug: true, v: asGrid(rows, b, true) };
+  }
+  return genUnique(n, m, false);
+}
+function genNone(n, m) {
+  n = Math.max(2, n); m = Math.max(2, m);
+  const r = Math.max(1, Math.min(n, m - 1));
+  for (let t = 0; t < 300; t++) {
+    const base = Array.from({ length: r }, () => Array.from({ length: n }, () => ri(-3, 3)));
+    if (rankOfInt(base, n) !== r) continue;
+    const rows = dependentRows(base, n, m);
+    if (maxAbs(rows) > 9) continue;
+    const x = nonZeroVector(n);
+    const b = rows.map((row) => dot(row, x));
+    b[m - 1] += pick([1, -1, 2]); // 종속인 마지막 줄만 어긋나게 → 0 = (0 아닌 수)
+    if (maxAbs([b]) > 40) continue;
+    return { n, m, aug: true, v: asGrid(rows, b, true) };
+  }
+  return genUnique(n, m, false);
+}
+function genInverse(n) {
+  for (let t = 0; t < 300; t++) {
+    const A = unimodular(n, n + 2);
+    if (Math.random() < 0.5) { const i = ri(0, n - 1); A[i] = A[i].map((v) => v * pick([2, 3])); }
+    if (maxAbs(A) > 9) continue;
+    if (A.every((r, i) => r.every((v, j) => v === (i === j ? 1 : 0)))) continue;
+    return { n, m: n, aug: false, v: asGrid(A, [], false) };
+  }
+  return { n, m: n, aug: false, v: asGrid(unimodular(n, n), [], false) };
+}
+const TYPES = {
+  "유일해": { make: (n, m) => genUnique(n, m, false), note: "해가 하나뿐이고 계산도 정수로 떨어집니다." },
+  "분수가 나오게": { make: (n, m) => genUnique(n, m, true), note: "중간 계산에 분수가 나오지만 답은 정수입니다." },
+  "해가 무수히": { make: (n, m) => genMany(n, m), note: "종속인 식을 섞어 자유변수를 만듭니다." },
+  "해가 없음": { make: (n, m) => genNone(n, m), note: "종속인 식의 우변만 어긋나게 만듭니다." },
+  "역행렬 구하기": { make: (n) => genInverse(n), note: "연립방정식 대신, 가역인 정사각행렬을 단위행렬로 만듭니다." },
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   6. 상태
+   ═══════════════════════════════════════════════════════════════ */
+const S = { n: 3, m: 3, aug: true, raw: null, A0: null, steps: [], idx: 0, goal: "rref", mode: "auto", type: "유일해" };
+
+function readGrid() {
+  const inputs = el("cellgrid").querySelectorAll("input");
+  const cols = S.n + (S.aug ? 1 : 0);
+  const A = []; let ok = true;
+  for (let i = 0; i < S.m; i++) {
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const box = inputs[i * cols + c];
+      const v = parseEntry(box.value);
+      if (v === null) { ok = false; box.style.borderColor = "var(--bad)"; row.push(R(0)); }
+      else { box.style.borderColor = ""; row.push(v); }
+    }
+    A.push(row);
+  }
+  return ok ? A : null;
+}
+function buildGrid() {
+  const cols = S.n + (S.aug ? 1 : 0);
+  const g = el("cellgrid");
+  g.style.gridTemplateColumns = "repeat(" + cols + ",1fr)";
+  g.innerHTML = "";
+  for (let i = 0; i < S.m; i++) {
+    for (let c = 0; c < cols; c++) {
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.id = "cell-" + i + "-" + c; inp.autocomplete = "off";
+      inp.value = (S.raw && S.raw[i] && S.raw[i][c] !== undefined) ? S.raw[i][c] : "0";
+      inp.setAttribute("aria-label", (i + 1) + "행 " + (c + 1) + "열");
+      if (S.aug && c === cols - 1) inp.className = "augcol";
+      inp.addEventListener("input", onGridInput);
+      g.appendChild(inp);
+    }
+  }
+}
+function snapshotRaw() {
+  const inputs = el("cellgrid").querySelectorAll("input");
+  const cols = S.n + (S.aug ? 1 : 0);
+  S.raw = Array.from({ length: S.m }, (_, i) => Array.from({ length: cols }, (_, c) => inputs[i * cols + c].value));
+}
+function onGridInput() {
+  snapshotRaw();
+  const A = readGrid();
+  if (!A) return;
+  S.A0 = A;
+  recompute(true);
+}
+function recompute(jumpToEnd) {
+  if (S.mode === "auto") {
+    S.steps = eliminate(S.A0, S.n, S.goal);
+    S.idx = jumpToEnd ? S.steps.length : 0;
+  } else { S.steps = []; S.idx = 0; }
+  render();
+}
+const currentMatrix = () => (S.idx === 0 ? S.A0 : S.steps[S.idx - 1].after);
+function changedRows(step) {
+  const o = step.op;
+  return new Set(o.t === "swap" ? [o.i, o.j] : [o.i]);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. 1막 — 식을 행렬로
+   ═══════════════════════════════════════════════════════════════ */
+function eqsHTML(M, n) {
+  // 미지수마다 (부호, 항) 두 칸씩 쓰고 마지막에 = 와 우변을 붙여 세로로 줄을 맞춘다.
+  let html = '<div class="eqs" style="grid-template-columns:repeat(' + n + ',auto auto) auto auto">';
+  for (let i = 0; i < M.length; i++) {
+    const cells = [];
+    let shown = false;
+    for (let j = 0; j < n; j++) {
+      const c = M[i][j];
+      if (rZero(c)) { cells.push(["", ""]); continue; }
+      const neg = c.n < 0;
+      const abs = neg ? rNeg(c) : c;
+      cells.push([shown ? (neg ? MINUS : "+") : (neg ? MINUS : ""), coef(abs) + xName(j)]);
+      shown = true;
+    }
+    if (!shown && n > 0) cells[n - 1] = ["", "0"]; // 계수가 전부 0인 식
+    html += cells.map(([op, term]) =>
+      '<span class="op">' + op + '</span><span class="term">' + term + "</span>").join("");
+    html += '<span class="op">=</span><span class="rhs">' + fmt(M[i][n]) + "</span>";
+  }
+  return html + "</div>";
+}
+
+function renderAct1() {
+  const A = S.A0, n = S.n;
+  const box = el("flow");
+  if (!S.aug) {
+    box.innerHTML =
+      '<div class="flow-step"><p class="cap">풀 문제</p>' +
+      '<div class="lineup">' + tagged("A", matHTML(A)) +
+      '<span class="sign">→</span>' + tagged("I", matHTML(eye(S.m))) + "</div>" +
+      '<p class="meta" style="margin-top:12px">연립방정식이 아니라 행렬 하나입니다. ' +
+      "A 를 행연산만으로 단위행렬까지 밀고 가면, 그때 쓴 기본행렬들의 곱이 곧 A<sup>−1</sup> 입니다.</p></div>";
+    return;
+  }
+  const coeff = A.map((r) => r.slice(0, n));
+  const rhs = A.map((r) => [r[n]]);
+  box.innerHTML =
+    '<div class="flow-step"><p class="cap">① 연립일차방정식</p>' + eqsHTML(A, n) + "</div>" +
+    '<div class="flow-arrow">미지수의 계수만 자리를 지켜 뽑아내면</div>' +
+    '<div class="flow-step"><p class="cap">② 행렬 곱으로 — A x = b</p>' +
+    '<div class="lineup">' + tagged("A", matHTML(coeff)) +
+    tagged("x", symColHTML(Array.from({ length: n }, (_, j) => xName(j)))) +
+    '<span class="sign">=</span>' + tagged("b", matHTML(rhs)) + "</div></div>" +
+    '<div class="flow-arrow">계수와 우변을 한 판에 적어 두면 소거하기 편하다</div>' +
+    '<div class="flow-step"><p class="cap">③ 첨가행렬 [ A | b ] — 아래 2막은 이 행렬 위에서 진행합니다</p>' +
+    matHTML(A, { aug: 1, pivots: pivotsOf(A, n) }) + "</div>";
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. 2막 — 소거
+   ═══════════════════════════════════════════════════════════════ */
+function renderStage() {
+  const M = currentMatrix();
+  const piv = pivotsOf(M, S.n);
+  const step = S.idx > 0 ? S.steps[S.idx - 1] : null;
+  const augN = S.aug ? 1 : 0;
+
+  if (!step) {
+    el("opline").innerHTML = '<span class="kind">시작</span>' +
+      '<span style="font-family:var(--f-body);color:var(--muted);font-weight:400">' +
+      (S.aug ? "1막에서 만든 첨가행렬입니다. 오른쪽으로 넘겨 보세요." : "행렬 A 입니다. 오른쪽으로 넘겨 보세요.") + "</span>";
+    el("equation").innerHTML = tagged(S.aug ? "[ A | b ]" : "A", matHTML(M, { aug: augN, pivots: piv }));
+  } else {
+    el("opline").innerHTML = '<span class="num">' + S.idx + "</span>" +
+      '<span class="kind">' + OP_KIND[step.op.t] + "</span><span>" + opText(step.op) + "</span>";
+    el("equation").innerHTML =
+      tagged(eName(step.op), matHTML(step.E, { small: true }), true) +
+      '<span class="sign">·</span>' +
+      tagged("이전", matHTML(step.before, { aug: augN, small: true })) +
+      '<span class="sign">=</span>' +
+      tagged(S.idx + "단계", matHTML(step.after, { aug: augN, pivots: piv, changed: changedRows(step) }));
+  }
+  el("scrub").max = S.steps.length;
+  el("scrub").value = S.idx;
+  el("count").textContent = S.idx + " / " + S.steps.length + " 단계";
+  el("btnFirst").disabled = el("btnPrev").disabled = S.idx === 0;
+  el("btnNext").disabled = el("btnLast").disabled = S.idx >= S.steps.length;
+  el("stageHint").textContent = piv.length ? "주황색이 선행성분 · 초록색이 방금 바뀐 행" : "";
+}
+
+function renderTape() {
+  const t = el("tape");
+  if (!S.steps.length) {
+    t.innerHTML = '<li style="border:0;padding:10px 0;color:var(--faint);font-size:13px">' +
+      (S.mode === "manual" ? "아래 [직접 연산]에서 행연산을 골라 적용해 보세요." : "소거할 것이 없습니다.") + "</li>";
+    return;
+  }
+  t.innerHTML = S.steps.map((s, k) =>
+    '<li><button class="tapeitem" data-go="' + (k + 1) + '" aria-current="' + (S.idx === k + 1) + '">' +
+    '<span class="idx">' + (k + 1) + '</span><span class="note">' + opText(s.op) +
+    '</span><span class="ename">' + eName(s.op) + "</span></button></li>").join("");
+  t.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => { S.idx = +b.dataset.go; render(); }));
+}
+
+function renderSolution() {
+  const box = el("solution");
+  if (!S.aug) {
+    const a = analyze(S.A0, S.n, false);
+    box.innerHTML = '<p class="meta">연립방정식이 아니므로 해 대신 행렬 자체를 봅니다. 계수 rank(A) = <code>' + a.rank + "</code>" +
+      (S.n === S.m ? (a.rank === S.n ? " · <b>가역</b>입니다." : " · 특이행렬(역행렬 없음)입니다.") : "") + "</p>";
+    return;
+  }
+  const a = analyze(S.A0, S.n, true);
+  const names = Array.from({ length: S.n }, (_, i) => xName(i));
+  if (a.inconsistent) {
+    box.innerHTML = '<span class="verdict none">해가 없습니다</span>' +
+      '<p class="meta">0 = (0이 아닌 수) 꼴의 식이 나옵니다 · rank(A) = <code>' + a.rank +
+      "</code> ≠ rank([A|b]) = <code>" + (a.rank + 1) + "</code></p>";
+    return;
+  }
+  const rhs = (i) => a.rref[i][S.n];
+  if (a.free.length === 0) {
+    const xs = [];
+    for (const p of a.pivots) xs[p.col] = rhs(p.row);
+    let html = '<span class="verdict one">해가 하나뿐입니다</span><div class="sol">' +
+      xs.map((v, i) => "<span>" + names[i] + " = " + fmt(v) + "</span>").join("") + "</div>";
+    const ok = S.A0.every((row) => {
+      let s = R(0);
+      for (let c = 0; c < S.n; c++) s = rAdd(s, rMul(row[c], xs[c]));
+      return rEq(s, row[S.n]);
+    });
+    html += '<p class="meta">' + (ok ? "원래 식에 그대로 넣어 확인했습니다." : "검산이 맞지 않습니다.") + "</p>";
+    box.innerHTML = html;
+    return;
+  }
+  const params = ["t", "s", "u", "v"];
+  const pName = {};
+  a.free.forEach((c, k) => { pName[c] = params[k] || "t" + (k + 1); });
+  let html = '<span class="verdict many">해가 무수히 많습니다</span><div class="sol">';
+  for (let c = 0; c < S.n; c++) {
+    if (pName[c] !== undefined) { html += "<span>" + names[c] + " = " + pName[c] + "</span>"; continue; }
+    const p = a.pivots.find((x) => x.col === c);
+    let s = fmt(rhs(p.row));
+    for (const f of a.free) {
+      const k = a.rref[p.row][f];
+      if (rZero(k)) continue;
+      const abs = k.n > 0 ? k : rNeg(k);
+      s += (k.n > 0 ? " " + MINUS + " " : " + ") + coef(abs) + pName[f];
+    }
+    html += "<span>" + names[c] + " = " + s + "</span>";
+  }
+  html += "</div>" + '<p class="meta">자유변수 <code>' + a.free.length + "</code>개 (" +
+    a.free.map((c) => names[c]).join(", ") + ") · rank(A) = <code>" + a.rank + "</code></p>";
+  box.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   9. 3막 — 기본행렬의 곱
+   ═══════════════════════════════════════════════════════════════ */
+function renderLegend() {
+  const items = [
+    { op: { t: "swap", i: 0, j: 1 }, title: "교환", desc: "두 행을 맞바꿉니다" },
+    { op: { t: "scale", i: 1, c: R(3) }, title: "상수배", desc: "한 행에 0이 아닌 수를 곱합니다" },
+    { op: { t: "add", i: 2, j: 0, c: R(-2) }, title: "덧셈", desc: "한 행에 다른 행의 상수배를 더합니다" },
+  ];
+  el("legend").innerHTML = items.map((it) =>
+    '<div class="item">' + matHTML(elemMatrix(it.op, 3), { small: true }) +
+    '<div class="txt"><strong>' + it.title + '</strong><span class="not">' + opText(it.op) +
+    "</span><br>" + it.desc + "</div></div>").join("");
+}
+
+/** 곱이 한 단계씩 쌓이는 모습 — 여기가 3막의 본문이다. */
+function renderChain() {
+  const box = el("chain");
+  if (!S.steps.length) {
+    box.innerHTML = '<li style="border:0;padding:10px 0;color:var(--faint);font-size:13px">2막에서 소거를 진행하면 여기에 곱이 쌓입니다.</li>';
+    return;
+  }
+  let P = eye(S.m);
+  const rows = [];
+  for (let k = 0; k < S.steps.length; k++) {
+    P = matMul(S.steps[k].E, P);
+    const names = [];
+    for (let q = k; q >= 0; q--) names.push(eName(S.steps[q].op));
+    rows.push('<li><button class="link" data-go="' + (k + 1) + '" aria-current="' + (S.idx === k + 1) + '">' +
+      '<span class="k">P' + subs(k + 1) + '</span>' +
+      '<span class="expr">= ' + names.join(" · ") + "</span>" +
+      '<span class="res">' + matHTML(P, { small: true }) + "</span></button></li>");
+  }
+  box.innerHTML = rows.join("");
+  box.querySelectorAll("[data-go]").forEach((b) =>
+    b.addEventListener("click", () => { S.idx = +b.dataset.go; render(); }));
+}
+
+function renderProduct() {
+  const box = el("product");
+  if (!S.steps.length) { box.innerHTML = ""; return; }
+  let P = eye(S.m);
+  for (const s of S.steps) P = matMul(s.E, P);
+  const names = S.steps.map((s) => eName(s.op)).reverse();
+  const last = S.steps[S.steps.length - 1].after;
+  const augN = S.aug ? 1 : 0;
+
+  let html = '<div class="panel"><h3 class="mini">한 줄로 정리하면</h3>' +
+    '<div class="equation">' +
+    tagged(names.join(" · "), matHTML(P, { small: true }), true) +
+    '<span class="sign">·</span>' +
+    tagged(S.aug ? "[ A | b ]" : "A", matHTML(S.A0, { aug: augN, small: true })) +
+    '<span class="sign">=</span>' +
+    tagged("소거 결과", matHTML(last, { aug: augN, small: true, pivots: pivotsOf(last, S.n) })) +
+    "</div>";
+
+  // 되돌아가는 길 — 기본행렬의 역도 다시 기본행렬이다.
+  const invNames = S.steps.map((s) => eName(invOp(s.op)) + "⁻¹");
+  html += '<p class="meta" style="margin-top:14px">거꾸로 하면 ' +
+    (S.aug ? "[ A | b ]" : "A") + " = " + invNames.join(" · ") +
+    " · (소거 결과) — 기본행렬의 역도 다시 기본행렬입니다.</p>";
+
+  const coeff = last.map((r) => r.slice(0, S.n));
+  const isI = S.m === S.n && coeff.every((row, i) => row.every((x, j) => rIs(x, i === j ? 1 : 0)));
+  if (isI) {
+    const A = S.A0.map((r) => r.slice(0, S.n));
+    const chk = matMul(P, A);
+    const ok = chk.every((row, i) => row.every((x, j) => rIs(x, i === j ? 1 : 0)));
+    html += '<div class="insight"><b>이 곱이 곧 A<sup>−1</sup> 입니다.</b> ' +
+      "계수부분이 단위행렬이 되었으니 P·A = I 이고, 따라서 P = A<sup>−1</sup>. " +
+      (ok ? "실제로 곱해 확인했습니다." : "") +
+      (S.aug ? " 우변도 같이 곱해졌으므로 마지막 열이 바로 해 A<sup>−1</sup>b 입니다." : "") +
+      "</div>";
+  }
+  box.innerHTML = html + "</div>";
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. 직접 연산
+   ═══════════════════════════════════════════════════════════════ */
+const rowOptions = (sel) => { sel.innerHTML = Array.from({ length: S.m }, (_, i) => '<option value="' + i + '">' + rowName(i) + "</option>").join(""); };
+function buildOpArgs() {
+  const t = el("opType").value, wrap = el("opArgs");
+  if (t === "swap") wrap.innerHTML = '<select id="argI"></select><span>↔</span><select id="argJ"></select>';
+  else if (t === "scale") wrap.innerHTML = '<select id="argI"></select><span>×</span><input type="text" id="argC" value="2" style="width:62px" aria-label="곱할 수">';
+  else wrap.innerHTML = '<select id="argI"></select><span>+=</span><input type="text" id="argC" value="-2" style="width:62px" aria-label="배수"><span>×</span><select id="argJ"></select>';
+  if (el("argI")) rowOptions(el("argI"));
+  if (el("argJ")) { rowOptions(el("argJ")); el("argJ").value = String(Math.min(1, S.m - 1)); }
+}
+function applyManual() {
+  el("opError").textContent = "";
+  const t = el("opType").value, i = +el("argI").value;
+  let op = null;
+  if (t === "swap") {
+    const j = +el("argJ").value;
+    if (i === j) { el("opError").textContent = "서로 다른 두 행을 고르세요."; return; }
+    op = { t: "swap", i, j };
+  } else if (t === "scale") {
+    const c = parseEntry(el("argC").value);
+    if (c === null) { el("opError").textContent = "숫자를 알아볼 수 없습니다. 3, -1/2, 0.25 처럼 적으세요."; return; }
+    if (rZero(c)) { el("opError").textContent = "0을 곱하면 되돌릴 수 없어 행연산이 아닙니다."; return; }
+    op = { t: "scale", i, c };
+  } else {
+    const j = +el("argJ").value, c = parseEntry(el("argC").value);
+    if (i === j) { el("opError").textContent = "자기 행을 더할 수는 없습니다."; return; }
+    if (c === null) { el("opError").textContent = "숫자를 알아볼 수 없습니다."; return; }
+    op = { t: "add", i, j, c };
+  }
+  S.steps = S.steps.slice(0, S.idx); // 되감아 둔 뒤 새 연산을 하면 그 뒤 기록은 버린다
+  const before = currentMatrix();
+  S.steps.push({ op, before, after: applyOp(before, op), E: elemMatrix(op, S.m) });
+  S.idx = S.steps.length;
+  render();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   11. 전체 그리기 / 시작
+   ═══════════════════════════════════════════════════════════════ */
+function render() {
+  renderAct1();
+  renderStage();
+  renderTape();
+  renderSolution();
+  renderChain();
+  renderProduct();
+  el("manualBlock").hidden = S.mode !== "manual";
+  el("modeNote").textContent = S.mode === "auto"
+    ? "프로그램이 끝까지 소거합니다."
+    : "행연산을 직접 골라 적용합니다.";
+  el("btnUndo").disabled = S.steps.length === 0;
+}
+
+function generate(type, toEnd) {
+  S.type = type;
+  const p = TYPES[type].make(S.n, S.m);
+  S.n = p.n; S.m = p.m; S.aug = p.aug;
+  S.raw = p.v.map((r) => r.slice());
+  el("selN").value = S.n; el("selM").value = S.m; el("chkAug").checked = S.aug;
+  buildGrid();
+  S.A0 = readGrid();
+  buildOpArgs();
+  el("types").querySelectorAll("[data-type]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.type === S.type)));
+  el("typeNote").textContent = TYPES[type].note;
+  recompute(toEnd);
+}
+
+function init() {
+  for (const id of ["selN", "selM"]) {
+    el(id).innerHTML = "";
+    for (let v = 2; v <= 5; v++) {
+      const o = document.createElement("option");
+      o.value = v; o.textContent = v;
+      el(id).appendChild(o);
+    }
+  }
+  el("types").innerHTML = Object.keys(TYPES)
+    .map((k) => '<button data-type="' + k + '" aria-pressed="false">' + k + "</button>").join("");
+  el("types").querySelectorAll("[data-type]").forEach((b) =>
+    b.addEventListener("click", () => generate(b.dataset.type, false)));
+  el("btnRoll").addEventListener("click", () => generate(S.type, false));
+
+  /** 크기를 바꿔도 적어 둔 값은 제자리에 남긴다. 우변은 따로 옮겨야 밀리지 않는다. */
+  const resize = () => {
+    snapshotRaw();
+    const old = S.raw, oldN = S.n, oldAug = S.aug;
+    const newN = +el("selN").value, newM = +el("selM").value, newAug = el("chkAug").checked;
+    S.raw = Array.from({ length: newM }, (_, i) => {
+      const row = Array.from({ length: newN }, (_, c) => (old && old[i] && old[i][c] !== undefined ? old[i][c] : "0"));
+      if (newAug) row.push(oldAug && old && old[i] && old[i][oldN] !== undefined ? old[i][oldN] : "0");
+      return row;
+    });
+    S.n = newN; S.m = newM; S.aug = newAug;
+    buildGrid(); S.A0 = readGrid(); buildOpArgs(); recompute(true);
+  };
+  el("selN").addEventListener("change", resize);
+  el("selM").addEventListener("change", resize);
+  el("chkAug").addEventListener("change", resize);
+
+  el("scrub").addEventListener("input", (e) => { S.idx = +e.target.value; render(); });
+  el("btnFirst").addEventListener("click", () => { S.idx = 0; render(); });
+  el("btnPrev").addEventListener("click", () => { S.idx = Math.max(0, S.idx - 1); render(); });
+  el("btnNext").addEventListener("click", () => { S.idx = Math.min(S.steps.length, S.idx + 1); render(); });
+  el("btnLast").addEventListener("click", () => { S.idx = S.steps.length; render(); });
+
+  el("segGoal").querySelectorAll("[data-goal]").forEach((b) => b.addEventListener("click", () => {
+    S.goal = b.dataset.goal;
+    el("segGoal").querySelectorAll("[data-goal]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.goal === S.goal)));
+    recompute(true);
+  }));
+  el("segMode").querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
+    S.mode = b.dataset.mode;
+    el("segMode").querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.mode === S.mode)));
+    recompute(true);
+  }));
+
+  el("opType").addEventListener("change", buildOpArgs);
+  el("btnApply").addEventListener("click", applyManual);
+  el("btnUndo").addEventListener("click", () => {
+    S.steps = S.steps.slice(0, Math.max(0, S.idx - 1));
+    S.idx = S.steps.length;
+    render();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input, select, textarea, summary")) return;
+    if (e.key === "ArrowRight") { el("btnNext").click(); e.preventDefault(); }
+    if (e.key === "ArrowLeft") { el("btnPrev").click(); e.preventDefault(); }
+  });
+
+  // 지금 보고 있는 막을 위쪽 이동줄에 표시한다.
+  const links = [...el("actnav").querySelectorAll("a")];
+  const spy = new IntersectionObserver((entries) => {
+    const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    if (!hit) return;
+    links.forEach((a) => a.setAttribute("aria-current", String(a.getAttribute("href") === "#" + hit.target.id)));
+  }, { rootMargin: "-56px 0px -60% 0px" });
+  document.querySelectorAll("section.act").forEach((s) => spy.observe(s));
+
+  renderLegend();
+  // 처음 열 때는 다 푼 모습으로 — 이후 [다시 뽑기]는 0단계에서 시작한다.
+  generate("유일해", true);
+}
+init();
+</script>
+</body>
+</html>
