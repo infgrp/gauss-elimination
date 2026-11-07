@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="연립방정식 풀기·기약행사다리꼴 만들기·역행렬 구하기를 기본행렬의 곱으로 되짚어 보여 주고, 행렬의 대각화와 거듭제곱까지 다루는 수업용 도구.">
+<meta name="description" content="연립방정식·기약행사다리꼴·역행렬을 기본행렬의 곱으로 되짚고, 대각화와 거듭제곱·직교대각화·특이값 분해까지 분수로 정확하게 보여 주는 수업용 선형대수 도구.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#129518;</text></svg>">
-<title>가우스 소거 실습실</title>
+<title>선형대수 실습실</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@600&display=swap">
@@ -76,7 +76,7 @@
   nav.acts a[aria-current="true"] { background:var(--accent-soft); color:var(--accent); font-weight:600; border-color:var(--accent); }
 
   /* ── 목적 고르기 ────────────────────────────────────────── */
-  .purpose { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-bottom:26px; }
+  .purpose { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin-bottom:26px; }
   .purpose button {
     display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left;
     padding:13px 15px; border-radius:10px; border:1px solid var(--rule-2); background:var(--surface);
@@ -226,10 +226,10 @@
   .eig + .eig { margin-top:18px; padding-top:18px; border-top:1px dashed var(--rule-2); }
   .eig .cap b { color:var(--pivot); }
   /* λ·v₁·det 가 Λ·V₁·DET 로 바뀌지 않게 */
-  :is(#actE, #actP) :is(.tag, .cap, h3.mini) { text-transform:none; letter-spacing:.02em; }
+  :is(#actE, #actP, #actQ, #actS1, #actS2) :is(.tag, .cap, h3.mini) { text-transform:none; letter-spacing:.02em; }
   /* 좁은 화면: 줄을 바꾸고, 행렬 하나가 그래도 넓으면 카드 안에서만 가로로 민다 */
-  :is(#actE, #actP) :is(.flow-step, .panel, .insight) { min-width:0; overflow-x:auto; }
-  :is(#actE, #actP) .lineup { row-gap:14px; }
+  :is(#actE, #actP, #actQ, #actS1, #actS2) :is(.flow-step, .panel, .insight) { min-width:0; overflow-x:auto; }
+  :is(#actE, #actP, #actQ, #actS1, #actS2) .lineup { row-gap:14px; }
   details.ops { margin-top:10px; font-size:12.5px; color:var(--muted); }
   details.ops summary { cursor:pointer; width:max-content; }
   details.ops ol { margin:6px 0 0; padding-left:24px; font-family:var(--f-mono); color:var(--ink); }
@@ -240,22 +240,25 @@
 
 <div class="shell">
   <header class="top">
-    <p class="eyebrow">선형대수 · 행 줄이기</p>
-    <h1>가우스 소거 실습실</h1>
+    <p class="eyebrow">행렬 계산 · 소거에서 특이값 분해까지</p>
+    <h1>선형대수 실습실</h1>
     <p class="lede">
-      연립방정식을 <b>행렬로 세우고</b>, <b>소거해서 풀고</b>, 그 풀이가 결국
-      <b>어떤 기본행렬들의 곱</b>이었는지까지 차례로 따라갑니다.
-      행렬만 놓고 <b>기약행사다리꼴</b>을 만들거나 <b>역행렬</b>을 구할 수도 있고,
-      고유벡터로 <b>대각화</b>해 <b>거듭제곱</b>을 계산할 수도 있습니다.
+      행렬 계산을 <b>답만이 아니라 과정째</b> 보여 줍니다. 연립방정식을 <b>소거해서 풀고</b>
+      그 풀이가 <b>어떤 기본행렬들의 곱</b>이었는지 되짚는 데서 시작해,
+      <b>역행렬</b>, 고유벡터로 하는 <b>대각화와 거듭제곱</b>, 대칭행렬의 <b>직교대각화</b>,
+      어떤 행렬에나 통하는 <b>특이값 분해</b>까지 같은 방식으로 따라갑니다.
     </p>
   </header>
 
   <nav class="acts" id="actnav">
     <a href="#act1">① 문제 세우기</a>
-    <a href="#act2" data-for="gauss">② 기본행연산으로 줄이기</a>
-    <a href="#act3" data-for="gauss">③ 기본행렬의 곱으로</a>
-    <a href="#actE" data-for="diag" hidden>② 고유값과 고유벡터</a>
+    <a href="#act2" data-for="solve rref inverse">② 기본행연산으로 줄이기</a>
+    <a href="#act3" data-for="solve rref inverse">③ 기본행렬의 곱으로</a>
+    <a href="#actE" data-for="diag orth" hidden>② 고유값과 고유벡터</a>
     <a href="#actP" data-for="diag" hidden>③ 대각화와 거듭제곱</a>
+    <a href="#actQ" data-for="orth" hidden>③ 직교대각화</a>
+    <a href="#actS1" data-for="svd" hidden>② AᵀA 와 특이값</a>
+    <a href="#actS2" data-for="svd" hidden>③ 특이값 분해</a>
   </nav>
 
   <!-- ══ 1막 ══════════════════════════════════════════════ -->
@@ -278,6 +281,12 @@
       </button>
       <button data-purpose="diag" aria-pressed="false">
         <strong>대각화와 거듭제곱</strong><span>A = P D P&#8315;&#185; &#8594; A<sup>k</sup></span>
+      </button>
+      <button data-purpose="orth" aria-pressed="false">
+        <strong>직교대각화</strong><span>대칭행렬 A = Q D Q<sup>T</sup></span>
+      </button>
+      <button data-purpose="svd" aria-pressed="false">
+        <strong>특이값 분해 (SVD)</strong><span>모든 행렬 A = U &#931; V<sup>T</sup></span>
       </button>
     </div>
 
@@ -318,7 +327,7 @@
   </section>
 
   <!-- ══ 2막 ══════════════════════════════════════════════ -->
-  <section class="act" id="act2">
+  <section class="act" id="act2" data-for="solve rref inverse">
     <div class="act-head">
       <span class="no">2</span>
       <h2>기본행연산으로 줄이기</h2>
@@ -373,7 +382,7 @@
   </section>
 
   <!-- ══ 3막 ══════════════════════════════════════════════ -->
-  <section class="act" id="act3">
+  <section class="act" id="act3" data-for="solve rref inverse">
     <div class="act-head">
       <span class="no">3</span>
       <h2>기본행렬의 곱으로</h2>
@@ -389,7 +398,7 @@
   </section>
 
   <!-- ══ 대각화: 2막 ══════════════════════════════════════ -->
-  <section class="act" id="actE" hidden>
+  <section class="act" id="actE" data-for="diag orth" hidden>
     <div class="act-head">
       <span class="no">2</span>
       <h2>고유값과 고유벡터</h2>
@@ -399,7 +408,7 @@
   </section>
 
   <!-- ══ 대각화: 3막 ══════════════════════════════════════ -->
-  <section class="act" id="actP" hidden>
+  <section class="act" id="actP" data-for="diag" hidden>
     <div class="act-head">
       <span class="no">3</span>
       <h2>대각화와 거듭제곱</h2>
@@ -419,9 +428,39 @@
     </div>
   </section>
 
+  <!-- ══ 직교대각화: 3막 ══════════════════════════════════ -->
+  <section class="act" id="actQ" data-for="orth" hidden>
+    <div class="act-head">
+      <span class="no">3</span>
+      <h2>직교대각화</h2>
+      <span class="sub">A = Q D Qᵀ · Q 가 직교행렬이라 Q⁻¹ = Qᵀ</span>
+    </div>
+    <div class="flow" id="orthBox"></div>
+  </section>
+
+  <!-- ══ SVD: 2막 ═════════════════════════════════════════ -->
+  <section class="act" id="actS1" data-for="svd" hidden>
+    <div class="act-head">
+      <span class="no">2</span>
+      <h2>AᵀA 와 특이값</h2>
+      <span class="sub">AᵀA 를 직교대각화하면 V 와 σ = √λ 가 나온다</span>
+    </div>
+    <div class="flow" id="svdBox1"></div>
+  </section>
+
+  <!-- ══ SVD: 3막 ═════════════════════════════════════════ -->
+  <section class="act" id="actS2" data-for="svd" hidden>
+    <div class="act-head">
+      <span class="no">3</span>
+      <h2>특이값 분해</h2>
+      <span class="sub">uᵢ = A vᵢ / σᵢ 로 U 를 만들어 A = U Σ Vᵀ</span>
+    </div>
+    <div class="flow" id="svdBox2"></div>
+  </section>
+
   <footer class="bot">
     모든 계산은 이 페이지 안에서 분수로 이루어집니다 · 행 번호는 1부터 셉니다 ·
-    대각화는 고유값이 유리수인 행렬을 다룹니다
+    고유값이 무리수이면 대각화는 멈추고, 직교대각화·특이값 분해는 소수 넷째 자리 근사로 보여 줍니다
   </footer>
 </div>
 
@@ -845,6 +884,80 @@ function genDiag(n, kind) {
   return { n: 2, m: 2, grid: grid([[2, 1], [1, 2]]) };
 }
 
+/** 서로 직교하는 정수 벡터 n개 — 앞의 벡터들의 영공간에서 하나씩 뽑는다. */
+function orthoBasis(n) {
+  for (let t = 0; t < 300; t++) {
+    const first = Array.from({ length: n }, () => ri(-2, 2));
+    if (first.every((v) => v === 0)) continue;
+    const vs = [integerize(first.map((v) => R(v)))];
+    while (vs.length < n) {
+      const N = nullBasis(vs, n);
+      const c = N.map(() => ri(-1, 1));
+      if (c.every((x) => x === 0)) c[ri(0, c.length - 1)] = 1;
+      vs.push(integerize(N[0].map((_, i) => N.reduce((s, v, k) => rAdd(s, rMul(R(c[k]), v[i])), R(0)))));
+    }
+    if (maxAbs(vs.map((v) => v.map((x) => x.n))) > 3) continue;
+    return vs;
+  }
+  return eye(n);
+}
+const isIntMat = (A) => A.every((r) => r.every((x) => x.d === 1));
+const isDiagInt = (ints) => ints.every((r, i) => r.every((v, j) => i === j || v === 0));
+function randSym(n) {
+  const A = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let i = 0; i < n; i++) for (let j = i; j < n; j++) A[i][j] = A[j][i] = ri(-3, 3);
+  return A;
+}
+/** 대칭행렬: A = Σ λ w wᵀ / |w|² (w 끼리 직교) 가 정수가 되는 것만 */
+function genOrth(n, kind) {
+  if (kind === "repeated") n = Math.max(3, n);
+  const lim = n <= 2 ? 9 : n === 3 ? 12 : 15;
+  for (let t = 0; t < 2000; t++) {
+    if (kind === "float") {
+      const A = randSym(n);
+      if (isDiagInt(A) || diagData(A.map((r) => r.map((v) => R(v)))).allRational) continue;
+      return { n, m: n, grid: grid(A) };
+    }
+    const W = orthoBasis(n);
+    const pool = shuffle([-2, -1, 0, 1, 2, 3, 4, 5]);
+    const lams = kind === "repeated" ? [pool[0], pool[0], ...pool.slice(1, n - 1)] : pool.slice(0, n);
+    let A = W[0].map(() => W[0].map(() => R(0)));
+    W.forEach((w, i) => { A = matAdd(A, scaleMat(outerW(w, dotR(w, w)), R(lams[i]))); });
+    if (!isIntMat(A)) continue;
+    const ints = A.map((r) => r.map((x) => x.n));
+    if (maxAbs(ints) > lim || isDiagInt(ints)) continue;
+    if (kind === "repeated") { // 소거로 얻은 기저가 직교하지 않아야 그람–슈미트가 보인다
+      const g = diagData(A).groups.find((x) => x.alg > 1);
+      if (!g || rZero(dotR(g.vecs[0], g.vecs[1]))) continue;
+    }
+    return { n, m: n, grid: grid(ints) };
+  }
+  return { n: 2, m: 2, grid: grid([[2, 1], [1, 2]]) };
+}
+/** m×n: A = Σ cᵢ aᵢ bᵢᵀ (aᵢ, bᵢ 각각 직교) → σᵢ = cᵢ|aᵢ||bᵢ|, AᵀA 의 고유값이 정수 */
+function genSVD(n, m, kind) {
+  for (let t = 0; t < 2000; t++) {
+    if (kind === "float") {
+      const A = Array.from({ length: m }, () => Array.from({ length: n }, () => ri(-3, 3)));
+      if (rankOfInt(A, n) < Math.min(m, n)) continue;
+      const M = A.map((r) => r.map((v) => R(v)));
+      if (diagData(matMul(transpose(M), M)).allRational) continue;
+      return { n, m, grid: grid(A) };
+    }
+    const a = orthoBasis(m), b = orthoBasis(n);
+    const r = kind === "lowrank" ? Math.max(1, Math.min(m, n) - 1) : Math.min(m, n);
+    let A = a[0].map(() => b[0].map(() => R(0)));
+    for (let i = 0; i < r; i++) {
+      const c = R(ri(1, 2));
+      A = matAdd(A, a[i].map((x) => b[i].map((y) => rMul(c, rMul(x, y)))));
+    }
+    const ints = A.map((row) => row.map((x) => x.n));
+    if (maxAbs(ints) > 9 || ints.flat().filter((v) => v !== 0).length < Math.min(m, n) + 1) continue;
+    return { n, m, grid: grid(ints) };
+  }
+  return { n: 2, m: 2, grid: grid([[3, 0], [4, 5]]) };
+}
+
 const TYPES = {
   solve: {
     "유일해": { make: (n, m) => genUnique(n, m, false), note: "해가 하나뿐이고 계산도 정수로 떨어집니다." },
@@ -865,6 +978,16 @@ const TYPES = {
     "P⁻¹ 에 분수": { make: (n) => genDiag(n, "frac"), note: "고유벡터로 만든 P 의 역행렬에 분수가 나옵니다. 그래도 A 와 Aᵏ 은 정수입니다." },
     "중근인데 대각화됨": { make: (n) => genDiag(n, "repeated"), note: "같은 고유값이 두 번 나오지만 고유벡터도 두 개 나와 대각화됩니다 (3×3 이상)." },
     "대각화 불가능": { make: (n) => genDiag(n, "jordan"), note: "중근인데 고유벡터가 하나뿐이라 P 를 만들 수 없는 행렬입니다." },
+  },
+  orth: {
+    "서로 다른 고유값": { make: (n) => genOrth(n, "distinct"), note: "대칭행렬이라 고유벡터끼리 저절로 직교합니다. 길이로 나누기만 하면 Q 가 됩니다." },
+    "중근 (그람–슈미트)": { make: (n) => genOrth(n, "repeated"), note: "같은 고유값의 고유벡터끼리는 직교하지 않을 수 있어 그람–슈미트로 고칩니다 (3×3 이상)." },
+    "무리수 고유값": { make: (n) => genOrth(n, "float"), note: "고유값이 무리수인 대칭행렬입니다. 소수 넷째 자리까지 근사해 보여 줍니다." },
+  },
+  svd: {
+    "특이값이 깔끔하게": { make: (n, m) => genSVD(n, m, "full"), note: "AᵀA 의 고유값이 정수로 떨어져 U, Σ, V 를 √ 로 정확히 적을 수 있습니다. 행과 열 수를 따로 고르세요." },
+    "랭크가 모자란 행렬": { make: (n, m) => genSVD(n, m, "lowrank"), note: "특이값에 0 이 섞여, U 의 나머지 열을 Aᵀu = 0 의 해로 채웁니다." },
+    "무리수 특이값": { make: (n, m) => genSVD(n, m, "float"), note: "아무 정수 행렬이나 — 특이값은 보통 무리수라 소수 근사로 보여 줍니다." },
   },
 };
 
@@ -893,7 +1016,21 @@ const PURPOSE = {
     result: "",
     gridNote: "정사각행렬 A 의 성분을 적습니다. 고치면 바로 다시 계산합니다.",
   },
+  orth: {
+    title: "직교대각화할 행렬",
+    sub: "대칭행렬 Aᵀ = A",
+    result: "",
+    gridNote: "대칭행렬을 적습니다 (i행 j열 = j행 i열). 고치면 바로 다시 계산합니다.",
+  },
+  svd: {
+    title: "분해할 행렬",
+    sub: "모양이 어떻든 — m × n",
+    result: "",
+    gridNote: "아무 m × n 행렬이나 됩니다. 고치면 바로 다시 계산합니다.",
+  },
 };
+/** 고유값 계열 — 2막·3막이 소거 대신 따로 그려진다 */
+const EIGEN = ["diag", "orth", "svd"];
 
 /* ═══════════════════════════════════════════════════════════════
    7. 상태
@@ -905,7 +1042,7 @@ const S = {
   diag: null, k: 10,
 };
 /** 정사각행렬만 다루는 목적 */
-const squareOnly = () => S.purpose === "inverse" || S.purpose === "diag";
+const squareOnly = () => S.purpose === "inverse" || S.purpose === "diag" || S.purpose === "orth";
 /** 계수 칸 오른쪽에 덧붙는 열 수 */
 const extraCols = () => (S.purpose === "solve" ? 1 : S.purpose === "inverse" ? S.n : 0);
 /** 세로 구분선을 그을 열 (없으면 -1) */
@@ -968,9 +1105,16 @@ function onGridInput() {
   recompute(true);
 }
 function recompute(jumpToEnd) {
-  if (S.purpose === "diag") {
+  if (EIGEN.includes(S.purpose)) {
     S.steps = []; S.idx = 0;
-    try { S.diag = diagData(S.A0); } catch (e) { S.diag = { error: e.message }; }
+    try {
+      if (S.purpose === "diag") S.diag = diagData(S.A0);
+      else if (S.purpose === "orth") {
+        const sym = isSym(S.A0);
+        S.diag = sym ? diagData(S.A0) : null;
+        S.orth = orthData(S.A0, S.diag, sym);
+      } else S.svd = svdData(S.A0);
+    } catch (e) { S.diag = S.orth = S.svd = { error: e.message }; }
     render();
     return;
   }
@@ -1022,6 +1166,33 @@ function renderAct1() {
       '<div class="flow-arrow">계수와 우변을 한 판에 적어 두면 소거하기 편하다</div>' +
       '<div class="flow-step"><p class="cap">③ 첨가행렬 [ A | b ] — 2막은 이 행렬 위에서 진행합니다</p>' +
       matHTML(A, { bar: n, pivots: pivotsOf(A, n) }) + "</div>";
+    return;
+  }
+  if (S.purpose === "orth") {
+    const sym = isSym(A);
+    box.innerHTML =
+      '<div class="flow-step"><p class="cap">① 대칭행렬 A</p><div class="lineup">' + matHTML(A) +
+      '<span class="verdict ' + (sym ? "one" : "none") + '" style="margin:0">' + (sym ? "Aᵀ = A — 대칭입니다" : "Aᵀ ≠ A — 대칭이 아닙니다") + "</span></div>" +
+      (sym ? "" : '<p class="meta" style="margin-top:10px">직교대각화는 <b>대칭행렬에서만</b> 됩니다. 대칭이 아닌 행렬은 [대각화와 거듭제곱]이나 [특이값 분해]로 보세요.</p>') + "</div>" +
+      '<div class="flow-arrow">대칭행렬의 고유벡터는 서로 직교하게 고를 수 있다 (스펙트럼 정리)</div>' +
+      '<div class="flow-step"><p class="cap">② 목표: A = Q D Qᵀ</p><p class="meta">고유벡터를 <b>길이 1</b>로 맞춰 세운 Q 는 열끼리 직교하는 ' +
+      "<b>직교행렬</b>이라 Q<sup>T</sup>Q = I, 곧 <b>Q<sup>−1</sup> = Q<sup>T</sup></b> 입니다. 역행렬을 따로 구할 필요가 없습니다.</p></div>" +
+      '<div class="flow-arrow">열과 행으로 풀어 쓰면</div>' +
+      '<div class="flow-step"><p class="cap">③ 스펙트럼 분해 A = λ₁q₁q₁ᵀ + ⋯ + λₙqₙqₙᵀ</p><p class="meta">각 q q<sup>T</sup> 는 q 방향으로의 ' +
+      "<b>정사영</b> 행렬입니다. 대칭행렬은 서로 직교하는 방향마다 λ배로 늘이고 줄이는 변환의 합입니다.</p></div>";
+    return;
+  }
+  if (S.purpose === "svd") {
+    box.innerHTML =
+      '<div class="flow-step"><p class="cap">① ' + S.m + " × " + S.n + " 행렬 A</p>" + matHTML(A) + "</div>" +
+      '<div class="flow-arrow">대각화는 정사각행렬에서도 실패할 수 있지만</div>' +
+      '<div class="flow-step"><p class="cap">② 목표: A = U Σ Vᵀ</p><p class="meta"><b>모든</b> 행렬은 ' +
+      "입력 쪽의 정규직교 기저 V, 출력 쪽의 정규직교 기저 U, 그리고 0 이상의 수를 큰 순서로 대각선에 놓은 Σ 로 나뉩니다. " +
+      "A v<sub>i</sub> = σ<sub>i</sub> u<sub>i</sub> — 직교하는 방향 v 가 직교하는 방향 u 로, σ 배 늘어나 갑니다.</p></div>" +
+      '<div class="flow-arrow">V 와 σ 는 대칭행렬 AᵀA 를 직교대각화하면 얻는다</div>' +
+      '<div class="flow-step"><p class="cap">③ AᵀA = V Σᵀ Σ Vᵀ</p><p class="meta">AᵀA 의 고유값이 σ<sup>2</sup>, 고유벡터가 v 입니다. ' +
+      "그다음 u<sub>i</sub> = A v<sub>i</sub> / σ<sub>i</sub>. 마지막에 A 를 <b>랭크 1 행렬 σuv<sup>T</sup> 들의 합</b>으로 다시 적으면 " +
+      "큰 항 몇 개만으로 A 를 근사할 수 있습니다 — 사진 압축의 원리입니다.</p></div>";
     return;
   }
   if (S.purpose === "diag") {
@@ -1316,12 +1487,12 @@ function rationalRoots(c0) {
   return { roots, rest: c };
 }
 /** 분모를 없애고 공약수로 나눠 정수 벡터로, 첫 성분은 양수로 */
-function integerize(v) {
+function integerize(v, keepSign = false) {
   const L = lcmD(v);
   let w = v.map((x) => x.n * (L / x.d));
   const g = w.reduce((g, x) => gcd(g, x), 0) || 1;
   w = w.map((x) => x / g);
-  if (w.find((x) => x !== 0) < 0) w = w.map((x) => -x);
+  if (!keepSign && w.find((x) => x !== 0) < 0) w = w.map((x) => -x);
   return w.map((x) => R(x));
 }
 function eigenspace(A, lam) {
@@ -1397,11 +1568,11 @@ function factorHTML(groups, rest, sign) {
   return (sign < 0 ? MINUS : "") + parts.join("");
 }
 /** "A − 3I", "A + 2I", "A" */
-function shiftName(r) {
-  if (rZero(r)) return "A";
+function shiftName(r, base = "A") {
+  if (rZero(r)) return base;
   const abs = r.n > 0 ? r : rNeg(r);
   const k = rIs(abs, 1) ? "" : abs.d === 1 ? String(abs.n) : "(" + abs.n + "/" + abs.d + ")";
-  return "A " + (r.n > 0 ? MINUS : "+") + " " + k + "I";
+  return base + " " + (r.n > 0 ? MINUS : "+") + " " + k + "I";
 }
 /** λ^k — 음수·분수는 괄호로 */
 function powSym(r, k) {
@@ -1424,13 +1595,13 @@ function restNote(rest) {
   return "남은 인수 " + polyHTML(rest) + " 은 유리수 근이 없습니다.";
 }
 
-function renderEig() {
-  const box = el("eigFlow"), d = S.diag, A = S.A0, n = S.n;
-  if (!d || d.error) { box.innerHTML = '<p class="err">계산할 수 없습니다' + (d && d.error ? " — " + esc(d.error) : "") + "</p>"; return; }
-  const sym = A.map((row, i) => row.map((x, j) => (i !== j ? fmt(x) : rZero(x) ? MINUS + LAM : fmt(x) + " " + MINUS + " " + LAM)));
-  const sgn = n % 2 ? -1 : 1; // det(A − λI) = (−1)ⁿ det(λI − A)
+/** 특성방정식 → 고유값 → 고유공간. M 은 A 또는 AᵀA, base 는 그 이름. 반환: flow-step 들의 HTML */
+function eigenStepsHTML(M, d, base, no0) {
+  const n = M.length;
+  const sym = M.map((row, i) => row.map((x, j) => (i !== j ? fmt(x) : rZero(x) ? MINUS + LAM : fmt(x) + " " + MINUS + " " + LAM)));
+  const sgn = n % 2 ? -1 : 1; // det(M − λI) = (−1)ⁿ det(λI − M)
   const cpA = d.cp.map((x) => (sgn < 0 ? rNeg(x) : x));
-  let html = '<div class="flow-step"><p class="cap">① 특성방정식 det(A − λI) = 0</p><div class="lineup">' +
+  let html = '<div class="flow-step"><p class="cap">' + no0 + " 특성방정식 det(" + base + " − λI) = 0</p><div class=\"lineup\">" +
     signSpan("det") + matHTML(sym, { fmt: ident }) + signSpan("=") + '<span class="poly">' + polyHTML(cpA) + "</span></div>";
   if (d.groups.length) html += '<p class="poly" style="margin:12px 0 0">= ' + factorHTML(d.groups, d.rest, sgn) + " = 0</p>";
   html += '<p class="meta" style="margin-top:12px">고유값: ' +
@@ -1438,10 +1609,10 @@ function renderEig() {
     "</p>" + (d.allRational ? "" : '<p class="meta" style="margin-top:6px">' + restNote(d.rest) + "</p>") + "</div>";
 
   if (d.groups.length) {
-    html += '<div class="flow-arrow">고유값마다 (A − λI)v = 0 을 가우스 소거로 풀면 — 자유변수 하나가 고유벡터 하나</div><div class="flow-step">';
+    html += '<div class="flow-arrow">고유값마다 (' + base + " − λI)v = 0 을 가우스 소거로 풀면 — 자유변수 하나가 고유벡터 하나</div><div class=\"flow-step\">";
     let no = 0;
     for (const g of d.groups) {
-      const name = shiftName(g.r);
+      const name = shiftName(g.r, base);
       html += '<div class="eig"><p class="cap">λ = <b>' + fmt(g.r) + "</b> · 특성방정식에서 " + g.alg + "번 · 고유벡터 " + g.vecs.length + "개</p>" +
         '<div class="lineup">' + tagged(name, matHTML(g.B)) + signSpan("→") +
         tagged("기약행사다리꼴", matHTML(g.rref, { pivots: pivotsOf(g.rref, n) })) + signSpan("⇒") +
@@ -1453,6 +1624,28 @@ function renderEig() {
       html += "</div>";
     }
     html += "</div>";
+  }
+  return html;
+}
+
+function renderEig() {
+  const box = el("eigFlow"), d = S.diag, A = S.A0, n = S.n;
+  if (S.purpose === "orth" && S.orth && S.orth.sym === false) {
+    box.innerHTML = '<div class="flow-step"><span class="verdict none">대칭행렬이 아닙니다</span><p class="meta">직교대각화는 Aᵀ = A 인 행렬만 됩니다. ' +
+      "1막에서 i행 j열과 j행 i열을 같게 고치거나 [다시 뽑기]를 눌러 보세요.</p></div>";
+    return;
+  }
+  if (!d || d.error) { box.innerHTML = '<p class="err">계산할 수 없습니다' + (d && d.error ? " — " + esc(d.error) : "") + "</p>"; return; }
+  let html = eigenStepsHTML(A, d, "A", "①");
+
+  if (S.purpose === "orth") {
+    html += '<div class="flow-arrow">대칭행렬이므로</div><div class="flow-step">' + (d.allRational
+      ? '<span class="verdict one">직교대각화할 수 있습니다</span><p class="meta">대칭행렬은 언제나 직교대각화됩니다(스펙트럼 정리). ' +
+        "3막에서 고유벡터를 서로 직교하게 맞추고 길이 1로 나눠 Q 를 만듭니다.</p>"
+      : '<span class="verdict many">고유값이 무리수입니다</span><p class="meta">대칭행렬이라 직교대각화는 되지만 분수로는 적을 수 없어, ' +
+        "3막에서는 <b>소수 넷째 자리까지 근사</b>해 보여 줍니다.</p>");
+    box.innerHTML = html + "</div>";
+    return;
   }
 
   html += '<div class="flow-arrow">독립인 고유벡터가 ' + n + "개 모이면 대각화된다</div><div class=\"flow-step\">";
@@ -1525,6 +1718,303 @@ function renderPower() {
     '<div class="lineup" style="margin-top:10px"><span class="poly">A' + sup("k") + " =</span>" + terms.join(signSpan("+")) + "</div></div>";
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   10-3. 직교대각화 · 특이값 분해
+   정확한 경로: 고유벡터를 정수 벡터 w 로 두고 q = w / √(w·w) 로만 적는다.
+   그러면 Q D Qᵀ = Σ λ w wᵀ / (w·w) 처럼 검산은 모두 분수로 끝난다.
+   고유값이 무리수면 야코비 방법으로 소수 근사.
+   ═══════════════════════════════════════════════════════════════ */
+const transpose = (M) => M[0].map((_, j) => M.map((r) => r[j]));
+const dotR = (u, v) => u.reduce((s, x, i) => rAdd(s, rMul(x, v[i])), R(0));
+const matVec = (M, v) => M.map((row) => dotR(row, v));
+const matAdd = (A, B) => A.map((r, i) => r.map((x, j) => rAdd(x, B[i][j])));
+const scaleMat = (A, c) => A.map((r) => r.map((x) => rMul(x, c)));
+const outerW = (w, s) => w.map((x) => w.map((y) => rDiv(rMul(x, y), s))); // w wᵀ / s
+const sameMat = (X, Y) => X.every((r, i) => r.every((x, j) => rEq(x, Y[i][j])));
+const isSym = (A) => A.length === A[0].length && A.every((r, i) => r.every((x, j) => rEq(x, A[j][i])));
+/** B v = 0 의 해공간 기저 (정수 벡터) */
+function nullBasis(B, ncols) {
+  const a = analyze(B, ncols, false);
+  return a.free.map((f) => {
+    const v = Array.from({ length: ncols }, () => R(0));
+    v[f] = R(1);
+    for (const p of a.pivots) v[p.col] = rNeg(a.rref[p.row][f]);
+    return integerize(v);
+  });
+}
+/** 그람–슈미트 (분수 그대로, 결과는 다시 정수 벡터로) */
+function gramSchmidt(vs) {
+  const out = [];
+  for (const v of vs) {
+    let u = v;
+    for (const q of out) { const c = rDiv(dotR(v, q), dotR(q, q)); u = u.map((x, i) => rSub(x, rMul(c, q[i]))); }
+    out.push(integerize(u));
+  }
+  return out;
+}
+/** 고유값 묶음마다 직교화한 열 {w, s = w·w, lam} */
+function orthCols(d) {
+  const cols = [];
+  for (const g of d.groups) { g.gs = gramSchmidt(g.vecs); for (const w of g.gs) cols.push({ w, s: dotR(w, w), lam: g.r }); }
+  return cols;
+}
+
+/* ── √ 표기 ── */
+function sqfree(N) { let a = 1; for (let p = 2; p * p <= N; p++) while (N % (p * p) === 0) { N /= p * p; a *= p; } return [a, N]; }
+const fracH = (n, d) => '<span class="frac"><span class="n">' + n + '</span><span class="d">' + d + "</span></span>";
+/** x / √s  (x, s 정수) */
+function qEntry(x, s) {
+  if (rZero(x)) return "0";
+  const [a, b] = sqfree(s.n);
+  let num = Math.abs(x.n), den = a;
+  const g = gcd(num, den); num /= g; den /= g;
+  const sign = x.n < 0 ? MINUS : "";
+  if (b === 1) return sign + (den === 1 ? num : fracH(num, den));
+  return sign + fracH(num, (den === 1 ? "" : den) + "√" + b);
+}
+/** √r  (r ≥ 0 유리수) */
+function sqrtR(r) {
+  if (rZero(r)) return "0";
+  const [a, b] = sqfree(r.n * r.d);
+  let num = a, den = r.d;
+  const g = gcd(num, den); num /= g; den /= g;
+  const top = b === 1 ? String(num) : (num === 1 ? "" : num) + "√" + b;
+  return den === 1 ? top : fracH(top, den);
+}
+/** 소수 넷째 자리 */
+const nf = (x) => (Math.abs(x) < 5e-10 ? "0" : (x < 0 ? MINUS : "") + Math.abs(x).toFixed(4).replace(/\.?0+$/, ""));
+const colsMat = (cols, rows, entry) => Array.from({ length: rows }, (_, i) => cols.map((c) => entry(c, i)));
+const qMat = (cols, rows) => colsMat(cols, rows, (c, i) => qEntry(c.w[i], c.s));
+const fMat = (cols, rows) => colsMat(cols, rows, (c, i) => nf(c[i]));
+const trH = (M) => M[0].map((_, j) => M.map((r) => r[j]));
+const hMat = (M, small) => matHTML(M, { fmt: ident, small });
+
+/** 대칭행렬의 고유값·고유벡터 (야코비 회전) — 고유값 내림차순, 열벡터 배열 */
+function jacobi(S0) {
+  const n = S0.length, A = S0.map((r) => r.slice());
+  const V = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+  for (let sweep = 0; sweep < 100; sweep++) {
+    let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += A[p][q] * A[p][q];
+    if (off < 1e-26) break;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+      if (Math.abs(A[p][q]) < 1e-300) continue;
+      const th = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+      const t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1));
+      const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+      for (let k = 0; k < n; k++) { const x = A[k][p], y = A[k][q]; A[k][p] = c * x - s * y; A[k][q] = s * x + c * y; }
+      for (let k = 0; k < n; k++) { const x = A[p][k], y = A[q][k]; A[p][k] = c * x - s * y; A[q][k] = s * x + c * y; }
+      for (let k = 0; k < n; k++) { const x = V[k][p], y = V[k][q]; V[k][p] = c * x - s * y; V[k][q] = s * x + c * y; }
+    }
+  }
+  const order = A.map((r, i) => i).sort((i, j) => A[j][j] - A[i][i]);
+  const vecs = order.map((j) => {
+    const v = V.map((r) => r[j]);
+    const f = v.find((x) => Math.abs(x) > 1e-9);
+    return f < 0 ? v.map((x) => -x) : v;
+  });
+  return { vals: order.map((j) => A[j][j]), vecs };
+}
+const toF = (M) => M.map((r) => r.map((x) => x.n / x.d));
+const fMul = (A, B) => A.map((r) => B[0].map((_, j) => r.reduce((s, x, t) => s + x * B[t][j], 0)));
+const maxErr = (X, Y) => Math.max(...X.flatMap((r, i) => r.map((x, j) => Math.abs(x - Y[i][j]))));
+
+function orthData(A, d, sym) {
+  if (!sym) return { sym: false };
+  if (d.allRational) return { sym: true, exact: true, cols: orthCols(d) };
+  const J = jacobi(toF(A));
+  return { sym: true, exact: false, vals: J.vals, vecs: J.vecs };
+}
+
+function svdData(A) {
+  const m = A.length, n = A[0].length, At = transpose(A), AtA = matMul(At, A);
+  const d = diagData(AtA);
+  const out = { m, n, At, AtA, d };
+  if (d.allRational) {
+    out.exact = true;
+    out.v = orthCols(d); // λ 내림차순 = σ 내림차순
+    out.r = out.v.filter((c) => !rZero(c.lam)).length;
+    out.u = out.v.slice(0, out.r).map((c) => {
+      const Aw = matVec(A, c.w), y = integerize(Aw, true); // 부호를 지켜야 A v = σ u
+      return { w: y, s: dotR(y, y), Aw };
+    });
+    if (out.r < m) for (const w of gramSchmidt(nullBasis(At, m))) out.u.push({ w, s: dotR(w, w), fill: true });
+    out.terms = out.v.slice(0, out.r).map((c) => { const y = matVec(A, c.w); return y.map((yi) => c.w.map((wj) => rDiv(rMul(yi, wj), c.s))); });
+    return out;
+  }
+  out.exact = false;
+  const Af = toF(A), J = jacobi(toF(AtA));
+  out.lam = J.vals.map((v) => Math.max(v, 0));
+  out.V = J.vecs;
+  // 0 이어야 할 고유값이 반올림으로 1e-15 쯤 남는다 — 상대 크기로 자르고, 랭크는 min(m, n) 을 넘지 않는다
+  const tol = 1e-12 * Math.max(1, out.lam[0]);
+  out.lam = out.lam.map((l) => (l > tol ? l : 0));
+  out.sig = out.lam.map(Math.sqrt);
+  out.r = Math.min(m, n, out.lam.filter((l) => l > 0).length);
+  out.U = [];
+  for (let i = 0; i < out.r; i++) out.U.push(Af.map((row) => row.reduce((s, x, k) => s + x * out.V[i][k], 0) / out.sig[i]));
+  for (let e = 0; e < m && out.U.length < m; e++) { // 표준기저를 그람–슈미트로 깎아 나머지를 채운다
+    let u = Array.from({ length: m }, (_, i) => (i === e ? 1 : 0));
+    for (const q of out.U) { const c = q.reduce((s, x, i) => s + x * u[i], 0); u = u.map((x, i) => x - c * q[i]); }
+    const nr = Math.hypot(...u);
+    if (nr > 1e-8) out.U.push(u.map((x) => x / nr));
+  }
+  out.terms = out.V.slice(0, out.r).map((v, i) => out.U[i].map((ui) => v.map((vj) => out.sig[i] * ui * vj)));
+  return out;
+}
+
+/* ── 그리기 ── */
+const errBox = (o) => '<p class="err">계산할 수 없습니다' + (o && o.error ? " — " + esc(o.error) : "") + "</p>";
+const subN = (i) => subs(i + 1);
+const lamLabel = (r) => (r.d === 1 ? String(r.n) : plain(r));
+
+/** 직교성 표: 서로 다른 벡터끼리의 내적 */
+function dotList(vs, name) {
+  const out = [];
+  for (let i = 0; i < vs.length; i++) for (let j = i + 1; j < vs.length; j++) out.push(name + subN(i) + "·" + name + subN(j) + " = " + fmt(dotR(vs[i], vs[j])));
+  return out.join(" , ");
+}
+
+function renderOrth() {
+  const box = el("orthBox"), o = S.orth, n = S.n, A = S.A0;
+  if (!o || o.error) { box.innerHTML = errBox(o); return; }
+  if (!o.sym) { box.innerHTML = '<div class="flow-step"><p class="meta">대칭행렬이 아니라 직교대각화하지 않습니다.</p></div>'; return; }
+  if (!o.exact) {
+    const Q = o.vecs, D = o.vals.map((l, i) => o.vals.map((_, j) => (i === j ? l : 0)));
+    const Qm = Q[0].map((_, i) => Q.map((c) => c[i]));
+    const rec = fMul(fMul(Qm, D), trH(Qm));
+    box.innerHTML = '<div class="flow-step"><p class="cap">소수 넷째 자리까지 근사 (야코비 회전으로 계산)</p><div class="lineup">' +
+      tagged("Q", hMat(fMat(Q, n)), true) + tagged("D", hMat(D.map((r) => r.map(nf)))) + "</div>" +
+      '<p class="meta" style="margin-top:12px">고유값 ' + o.vals.map((l, i) => "λ" + subN(i) + " ≈ " + nf(l)).join(", ") + "</p></div>" +
+      '<div class="flow-arrow">Q⁻¹ 대신 Qᵀ</div><div class="flow-step"><p class="cap">A = Q D Qᵀ</p><div class="lineup">' +
+      tagged("Q", hMat(fMat(Q, n), true)) + signSpan("·") + tagged("D", hMat(D.map((r) => r.map(nf)), true)) + signSpan("·") +
+      tagged("Qᵀ", hMat(trH(fMat(Q, n)), true)) + signSpan("≈") + tagged("A", hMat(rec.map((r) => r.map(nf)))) + "</div>" +
+      '<p class="meta" style="margin-top:12px">원래 A 와의 차이는 가장 큰 칸에서도 ' + maxErr(rec, toF(A)).toExponential(1) + " 입니다.</p></div>";
+    return;
+  }
+  const d = S.diag, cols = o.cols;
+  // ① 직교성
+  const firsts = d.groups.map((g) => g.vecs[0]);
+  let html = '<div class="flow-step"><p class="cap">① 서로 다른 고유값의 고유벡터는 저절로 직교한다</p>';
+  html += d.groups.length > 1 ? '<p class="poly">' + dotList(firsts, "v") + "</p>" +
+    '<p class="meta" style="margin-top:8px">고유값마다 첫 고유벡터끼리의 내적입니다. 대칭행렬에서는 λ ≠ μ 이면 (λ − μ) v·w = 0 이라 내적이 0 이 됩니다.</p>'
+    : '<p class="meta">고유값이 하나뿐입니다.</p>';
+  for (const g of d.groups) {
+    if (g.alg < 2) continue;
+    const moved = g.vecs.some((v, i) => !v.every((x, k) => rEq(x, g.gs[i][k])));
+    html += '<div class="eig" style="margin-top:14px"><p class="cap">λ = <b>' + fmt(g.r) + "</b> 의 고유벡터 " + g.alg + "개 — " +
+      (moved ? "서로 직교하지 않아 그람–슈미트로 고칩니다" : "이미 서로 직교합니다") + '</p><div class="lineup">' +
+      g.vecs.map((v, i) => tagged("소거로 얻은 " + (i + 1), colHTML(v))).join("") +
+      (moved ? signSpan("⇒") + g.gs.map((w, i) => tagged("w" + subN(i), colHTML(w), true)).join("") : "") + "</div>" +
+      (moved ? '<p class="meta" style="margin-top:8px">w₂ = v₂ − (v₂·w₁)/(w₁·w₁) w₁ … 처럼 앞 벡터 방향 성분을 빼고, 분모를 없애 정수로 맞췄습니다. ' +
+        dotList(g.gs, "w") + "</p>" : "") + "</div>";
+  }
+  html += "</div>";
+  // ② 정규화
+  html += '<div class="flow-arrow">각 벡터를 자기 길이로 나누면 — qᵢ = wᵢ / |wᵢ|</div><div class="flow-step"><p class="cap">② 정규직교 고유벡터로 Q, 같은 순서의 고유값으로 D</p>' +
+    '<p class="meta" style="margin-bottom:10px">' + cols.map((c, i) => "|w" + subN(i) + "| = √" + c.s.n).join(", ") + "</p>" +
+    '<div class="lineup">' + tagged("Q", hMat(qMat(cols, n)), true) + tagged("D", matHTML(cols.map((c, i) => cols.map((_, j) => (i === j ? c.lam : R(0)))), { pivots: cols.map((_, i) => [i, i]) })) +
+    tagged("Qᵀ = Q⁻¹", hMat(trH(qMat(cols, n)))) + "</div></div>";
+  // ③ 검산
+  const W = colsMat(cols, n, (c, i) => c.w[i]);
+  const WtW = matMul(transpose(W), W);
+  const orthoOK = WtW.every((r, i) => r.every((x, j) => i === j || rZero(x)));
+  let rec = A.map((r) => r.map(() => R(0)));
+  const projs = cols.map((c) => outerW(c.w, c.s));
+  cols.forEach((c, i) => { rec = matAdd(rec, scaleMat(projs[i], c.lam)); });
+  html += '<div class="flow-arrow">Q⁻¹ 을 구할 필요 없이 Qᵀ 로</div><div class="flow-step"><p class="cap">③ A = Q D Qᵀ</p><div class="lineup">' +
+    tagged("Q", hMat(qMat(cols, n))) + signSpan("·") +
+    tagged("D", matHTML(cols.map((c, i) => cols.map((_, j) => (i === j ? c.lam : R(0)))), { small: true })) + signSpan("·") +
+    tagged("Qᵀ", hMat(trH(qMat(cols, n)))) + signSpan("=") + tagged("A", matHTML(rec)) + "</div>" +
+    '<p class="meta" style="margin-top:12px">' + (orthoOK ? "QᵀQ = I (열끼리 직교, 길이 1)" : "QᵀQ ≠ I") + " · " +
+    (sameMat(rec, A) ? "곱해서 원래 A 가 되는 것을 분수 계산으로 확인했습니다." : "확인에 실패했습니다.") + "</p></div>";
+  // ④ 스펙트럼 분해
+  const groupsP = d.groups.map((g) => {
+    let P = A.map((r) => r.map(() => R(0)));
+    cols.forEach((c, i) => { if (rEq(c.lam, g.r)) P = matAdd(P, projs[i]); });
+    return { g, P };
+  });
+  html += '<div class="flow-arrow">열 × 행으로 풀어 쓰면</div><div class="flow-step"><p class="cap">④ 스펙트럼 분해 — 고유값 × 정사영 행렬의 합</p>' +
+    '<div class="lineup"><span class="poly">A =</span>' +
+    groupsP.map(({ g, P }, i) => {
+      const neg = g.r.n < 0, abs = neg ? rNeg(g.r) : g.r;
+      const sign = i === 0 ? (neg ? signSpan(MINUS) : "") : signSpan(neg ? MINUS : "+");
+      return sign + (rIs(abs, 1) ? "" : '<span class="poly">' + fmt(abs) + "</span>") + matHTML(P, { small: true });
+    }).join("") + "</div>" +
+    '<p class="meta" style="margin-top:12px">각 행렬은 그 고유공간으로의 정사영입니다 (Σ qqᵀ). 제곱해도 자기 자신이고, 모두 더하면 I 입니다. ' +
+    "그래서 A<sup>k</sup> 는 고유값만 k제곱하면 됩니다: A<sup>k</sup> = " +
+    groupsP.map(({ g }) => powSym(g.r, "k") + "P<sub>" + lamLabel(g.r) + "</sub>").join(" + ") + ".</p></div>";
+  box.innerHTML = html;
+}
+
+function renderSVD() {
+  const b1 = el("svdBox1"), b2 = el("svdBox2"), o = S.svd, A = S.A0, m = S.m, n = S.n;
+  if (!o || o.error) { b1.innerHTML = errBox(o); b2.innerHTML = ""; return; }
+  // ── 2막 ──
+  let h1 = '<div class="flow-step"><p class="cap">① AᵀA — n × n 대칭행렬</p><div class="lineup">' +
+    tagged("Aᵀ", matHTML(o.At)) + signSpan("·") + tagged("A", matHTML(A)) + signSpan("=") + tagged("AᵀA", matHTML(o.AtA), true) + "</div>" +
+    '<p class="meta" style="margin-top:12px">대칭이고, 고유값이 모두 0 이상입니다: AᵀA v = λv 이면 λ|v|² = vᵀAᵀAv = |Av|² ≥ 0. 그래서 σ = √λ 를 쓸 수 있습니다.</p></div>' +
+    '<div class="flow-arrow">AᵀA 의 고유값과 고유벡터를 구하면</div>';
+  h1 += eigenStepsHTML(o.AtA, o.d, "AᵀA", "②");
+  let h2 = "";
+  if (o.exact) {
+    const v = o.v;
+    h1 += '<div class="flow-arrow">특이값은 고유값의 제곱근, 고유벡터는 직교화·정규화해서 V 로</div><div class="flow-step"><p class="cap">③ σᵢ = √λᵢ 와 V</p>' +
+      '<p class="poly" style="margin-bottom:12px">' + v.map((c, i) => "σ" + subN(i) + " = √" + lamLabel(c.lam) + " = " + sqrtR(c.lam)).join(" , ") + "</p>" +
+      (o.d.groups.some((g) => g.alg > 1) ? '<p class="meta" style="margin-bottom:10px">겹친 고유값의 고유벡터는 그람–슈미트로 직교하게 맞췄습니다.</p>' : "") +
+      '<div class="lineup">' + tagged("V = [ v₁ ⋯ v" + subs(n) + " ]", hMat(qMat(v, n)), true) + "</div></div>";
+    // ── 3막 ──
+    const u = o.u;
+    h2 += '<div class="flow-step"><p class="cap">① uᵢ = A vᵢ / σᵢ — |A vᵢ| = σᵢ 라서 단위벡터가 된다</p><div class="lineup">' +
+      u.slice(0, o.r).map((c, i) => tagged("A w" + subN(i), colHTML(c.Aw, true)) + signSpan("→") + tagged("u" + subN(i), hMat(qMat([c], m)), true)).join('<span class="sign" style="margin:0 6px">·</span>') + "</div>" +
+      '<p class="meta" style="margin-top:10px">wᵢ 는 vᵢ 방향의 정수 벡터입니다 (vᵢ = wᵢ / |wᵢ|). 방향만 보면 되니 A wᵢ 를 길이로 나누면 uᵢ 입니다.</p>';
+    if (o.r < m) h2 += '<div class="eig" style="margin-top:14px"><p class="cap">σ 가 ' + o.r + "개뿐이라 U 의 나머지 " + (m - o.r) +
+      "열은 Aᵀu = 0 의 해를 직교·정규화해 채웁니다</p><div class=\"lineup\">" +
+      u.slice(o.r).map((c, i) => tagged("u" + subN(o.r + i), hMat(qMat([c], m)), true)).join("") + "</div></div>";
+    h2 += "</div>";
+    const Sig = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => (i === j && i < v.length ? sqrtR(v[i].lam) : "0")));
+    let rec = A.map((r) => r.map(() => R(0)));
+    o.terms.forEach((T) => { rec = matAdd(rec, T); });
+    const okU = u.every((a, i) => u.every((b, j) => i >= j || rZero(dotR(a.w, b.w))));
+    const okV = v.every((a, i) => v.every((b, j) => i >= j || rZero(dotR(a.w, b.w))));
+    h2 += '<div class="flow-arrow">모으면</div><div class="flow-step"><p class="cap">② A = U Σ Vᵀ</p><div class="lineup">' +
+      tagged("U (" + m + "×" + m + ")", hMat(qMat(u, m))) + signSpan("·") + tagged("Σ (" + m + "×" + n + ")", hMat(Sig)) + signSpan("·") +
+      tagged("Vᵀ (" + n + "×" + n + ")", hMat(trH(qMat(v, n)))) + signSpan("=") + tagged("A", matHTML(rec)) + "</div>" +
+      '<p class="meta" style="margin-top:12px">' + (okU && okV ? "U 와 V 의 열이 각각 서로 직교합니다 (UᵀU = I, VᵀV = I). " : "직교성 확인 실패. ") +
+      (sameMat(rec, A) ? "곱하면 원래 A 가 되는 것을 분수 계산으로 확인했습니다." : "확인에 실패했습니다.") + "</p></div>";
+    // ③ 랭크 1 합
+    const tot = v.reduce((s, c) => rAdd(s, c.lam), R(0));
+    const rest1 = v.slice(1).reduce((s, c) => rAdd(s, c.lam), R(0));
+    h2 += '<div class="flow-arrow">열 × 행으로 풀어 쓰면</div><div class="flow-step"><p class="cap">③ A = σ₁u₁v₁ᵀ + σ₂u₂v₂ᵀ + ⋯ — 랭크 1 행렬들의 합</p>' +
+      (o.r ? '<div class="lineup"><span class="poly">A =</span>' + o.terms.map((T, i) => tagged("σ" + subN(i) + "u" + subN(i) + "v" + subN(i) + "ᵀ", matHTML(T, { small: true }))).join(signSpan("+")) + "</div>" : '<p class="meta">A = O 입니다.</p>') +
+      (o.r > 1 ? '<div class="insight"><b>가장 좋은 랭크 1 근사</b>는 첫 항 σ₁u₁v₁ᵀ 하나입니다 (에카르트–영 정리). 버린 만큼의 오차는 ' +
+        "‖A − A₁‖ = √(σ₂² + ⋯) = " + sqrtR(rest1) + ", 전체 크기 ‖A‖ = √(σ₁² + ⋯) = " + sqrtR(tot) + " 의 약 <b>" +
+        (100 * Math.sqrt((rest1.n / rest1.d) / (tot.n / tot.d))).toFixed(1) + "%</b> 입니다. " +
+        "사진처럼 큰 행렬에서 큰 σ 몇 개만 남기는 것이 SVD 압축입니다.</div>" : "") + "</div>";
+  } else {
+    const r = o.r;
+    h1 += '<div class="flow-arrow">고유값이 무리수라 여기서부터는 소수 넷째 자리까지 근사합니다</div><div class="flow-step"><p class="cap">③ σᵢ = √λᵢ 와 V (야코비 회전으로 계산)</p>' +
+      '<p class="poly" style="margin-bottom:12px">' + o.lam.map((l, i) => "λ" + subN(i) + " ≈ " + nf(l) + " → σ" + subN(i) + " ≈ " + nf(o.sig[i])).join(" , ") + "</p>" +
+      '<div class="lineup">' + tagged("V", hMat(fMat(o.V, n)), true) + "</div></div>";
+    h2 += '<div class="flow-step"><p class="cap">① uᵢ = A vᵢ / σᵢ' + (r < m ? " · 나머지 " + (m - r) + "열은 직교하는 벡터로 채움" : "") + '</p><div class="lineup">' +
+      tagged("U", hMat(fMat(o.U, m)), true) + "</div></div>";
+    const Sig = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => (i === j && i < o.sig.length ? nf(o.sig[i]) : "0")));
+    let rec = A.map((row) => row.map(() => 0));
+    o.terms.forEach((T) => { rec = rec.map((row, i) => row.map((x, j) => x + T[i][j])); });
+    h2 += '<div class="flow-arrow">모으면</div><div class="flow-step"><p class="cap">② A ≈ U Σ Vᵀ</p><div class="lineup">' +
+      tagged("U", hMat(fMat(o.U, m), true)) + signSpan("·") + tagged("Σ", hMat(Sig)) + signSpan("·") +
+      tagged("Vᵀ", hMat(trH(fMat(o.V, n)), true)) + signSpan("≈") + tagged("A", hMat(rec.map((row) => row.map(nf)))) + "</div>" +
+      '<p class="meta" style="margin-top:12px">원래 A 와의 차이는 가장 큰 칸에서도 ' + maxErr(rec, toF(A)).toExponential(1) + " 입니다.</p></div>";
+    const tot = o.lam.reduce((s, x) => s + x, 0), rest1 = tot - o.lam[0];
+    h2 += '<div class="flow-arrow">열 × 행으로 풀어 쓰면</div><div class="flow-step"><p class="cap">③ A = σ₁u₁v₁ᵀ + σ₂u₂v₂ᵀ + ⋯</p>' +
+      '<div class="lineup"><span class="poly">A ≈</span>' + o.terms.map((T, i) => tagged("σ" + subN(i) + "u" + subN(i) + "v" + subN(i) + "ᵀ", hMat(T.map((row) => row.map(nf)), true))).join(signSpan("+")) + "</div>" +
+      (r > 1 ? '<div class="insight"><b>가장 좋은 랭크 1 근사</b>는 첫 항 하나입니다. 버린 오차 ‖A − A₁‖ ≈ ' + nf(Math.sqrt(Math.max(rest1, 0))) +
+        ", 전체 ‖A‖ ≈ " + nf(Math.sqrt(tot)) + " 의 약 <b>" + (100 * Math.sqrt(Math.max(rest1, 0) / tot)).toFixed(1) + "%</b> 입니다.</div>" : "") + "</div>";
+  }
+  b1.innerHTML = h1;
+  b2.innerHTML = h2;
+}
+
 const rowOptions = (sel) => { sel.innerHTML = Array.from({ length: S.m }, (_, i) => '<option value="' + i + '">' + rowName(i) + "</option>").join(""); };
 function buildOpArgs() {
   const t = el("opType").value, wrap = el("opArgs");
@@ -1576,12 +2066,15 @@ function syncInputPanes() {
   el("segInput").querySelectorAll("[data-input]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.input === mode)));
   if (mode === "text") el("eqtext").value = equationsText();
   el("labM").hidden = squareOnly();
-  el("labN").firstChild.textContent = S.purpose === "solve" ? "미지수 " : S.purpose === "diag" ? "크기 " : "열 ";
+  el("labN").firstChild.textContent = S.purpose === "solve" ? "미지수 " : squareOnly() ? "크기 " : "열 ";
+  el("labM").firstChild.textContent = S.purpose === "solve" ? "식 " : "행 ";
 }
 
 function render() {
   renderAct1();
   if (S.purpose === "diag") { renderEig(); renderDiag(); renderPower(); return; }
+  if (S.purpose === "orth") { renderEig(); renderOrth(); return; }
+  if (S.purpose === "svd") { renderSVD(); return; }
   renderStage();
   renderTape();
   renderSolution();
@@ -1622,12 +2115,12 @@ function setPurpose(p) {
   S.purpose = p;
   el("purpose").querySelectorAll("[data-purpose]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.purpose === p)));
   if (p === "inverse") { S.goal = "rref"; S.m = S.n; }
-  const isDiag = p === "diag";
-  if (isDiag) { S.n = Math.min(S.n, 4); S.m = S.n; } // 고유값 표가 읽히는 크기까지
-  el("selN").querySelectorAll("option").forEach((o) => { o.disabled = isDiag && +o.value > 4; });
-  el("act2").hidden = el("act3").hidden = isDiag;
-  el("actE").hidden = el("actP").hidden = !isDiag;
-  el("actnav").querySelectorAll("[data-for]").forEach((a) => { a.hidden = (a.dataset.for === "diag") !== isDiag; });
+  const eig = EIGEN.includes(p);
+  if (eig) { S.n = Math.min(S.n, 4); S.m = Math.min(S.m, 4); } // 고유값 표가 읽히는 크기까지
+  if (p === "diag" || p === "orth") S.m = S.n;
+  for (const id of ["selN", "selM"]) el(id).querySelectorAll("option").forEach((o) => { o.disabled = eig && +o.value > 4; });
+  // 목적에 딸린 막과 이동 링크만 보인다
+  document.querySelectorAll("[data-for]").forEach((x) => { x.hidden = !x.dataset.for.split(" ").includes(p); });
   el("segInput").hidden = p !== "solve";
   el("segGoal").querySelectorAll("[data-goal]").forEach((x) => {
     x.setAttribute("aria-pressed", String(x.dataset.goal === S.goal));
