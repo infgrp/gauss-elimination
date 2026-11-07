@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="연립방정식 풀기·기약행사다리꼴 만들기·역행렬 구하기를 기본행렬의 곱으로 되짚어 보여 주는 수업용 도구.">
+<meta name="description" content="연립방정식 풀기·기약행사다리꼴 만들기·역행렬 구하기를 기본행렬의 곱으로 되짚어 보여 주고, 행렬의 대각화와 거듭제곱까지 다루는 수업용 도구.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#129518;</text></svg>">
 <title>가우스 소거 실습실</title>
@@ -219,6 +219,20 @@
   .insight { border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 15px; border-radius:0 7px 7px 0; font-size:13.5px; margin-top:18px; }
   .insight b { font-weight:600; }
   .panel { background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:18px 20px; }
+  /* ── 대각화 ─────────────────────────────────────────────── */
+  .poly { font-family:var(--f-mono); font-size:15.5px; font-variant-numeric:tabular-nums; }
+  .poly sup, .mat sup, .tag sup { font-size:.7em; }
+  .mat .cell { white-space:nowrap; }
+  .eig + .eig { margin-top:18px; padding-top:18px; border-top:1px dashed var(--rule-2); }
+  .eig .cap b { color:var(--pivot); }
+  /* λ·v₁·det 가 Λ·V₁·DET 로 바뀌지 않게 */
+  :is(#actE, #actP) :is(.tag, .cap, h3.mini) { text-transform:none; letter-spacing:.02em; }
+  /* 좁은 화면: 줄을 바꾸고, 행렬 하나가 그래도 넓으면 카드 안에서만 가로로 민다 */
+  :is(#actE, #actP) :is(.flow-step, .panel, .insight) { min-width:0; overflow-x:auto; }
+  :is(#actE, #actP) .lineup { row-gap:14px; }
+  details.ops { margin-top:10px; font-size:12.5px; color:var(--muted); }
+  details.ops summary { cursor:pointer; width:max-content; }
+  details.ops ol { margin:6px 0 0; padding-left:24px; font-family:var(--f-mono); color:var(--ink); }
   footer.bot { margin-top:52px; padding-top:14px; border-top:1px solid var(--rule); font-size:12px; color:var(--faint); }
 </style>
 </head>
@@ -231,14 +245,17 @@
     <p class="lede">
       연립방정식을 <b>행렬로 세우고</b>, <b>소거해서 풀고</b>, 그 풀이가 결국
       <b>어떤 기본행렬들의 곱</b>이었는지까지 차례로 따라갑니다.
-      행렬만 놓고 <b>기약행사다리꼴</b>을 만들거나 <b>역행렬</b>을 구할 수도 있습니다.
+      행렬만 놓고 <b>기약행사다리꼴</b>을 만들거나 <b>역행렬</b>을 구할 수도 있고,
+      고유벡터로 <b>대각화</b>해 <b>거듭제곱</b>을 계산할 수도 있습니다.
     </p>
   </header>
 
   <nav class="acts" id="actnav">
     <a href="#act1">① 문제 세우기</a>
-    <a href="#act2">② 기본행연산으로 줄이기</a>
-    <a href="#act3">③ 기본행렬의 곱으로</a>
+    <a href="#act2" data-for="gauss">② 기본행연산으로 줄이기</a>
+    <a href="#act3" data-for="gauss">③ 기본행렬의 곱으로</a>
+    <a href="#actE" data-for="diag" hidden>② 고유값과 고유벡터</a>
+    <a href="#actP" data-for="diag" hidden>③ 대각화와 거듭제곱</a>
   </nav>
 
   <!-- ══ 1막 ══════════════════════════════════════════════ -->
@@ -258,6 +275,9 @@
       </button>
       <button data-purpose="inverse" aria-pressed="false">
         <strong>역행렬 구하기</strong><span>[ A | I ] &#8594; [ I | A&#8315;&#185; ]</span>
+      </button>
+      <button data-purpose="diag" aria-pressed="false">
+        <strong>대각화와 거듭제곱</strong><span>A = P D P&#8315;&#185; &#8594; A<sup>k</sup></span>
       </button>
     </div>
 
@@ -368,8 +388,40 @@
     <div id="product" style="margin-top:24px"></div>
   </section>
 
+  <!-- ══ 대각화: 2막 ══════════════════════════════════════ -->
+  <section class="act" id="actE" hidden>
+    <div class="act-head">
+      <span class="no">2</span>
+      <h2>고유값과 고유벡터</h2>
+      <span class="sub">det(A − λI) = 0 을 풀고, λ 마다 (A − λI)v = 0 을 소거로 푼다</span>
+    </div>
+    <div class="flow" id="eigFlow"></div>
+  </section>
+
+  <!-- ══ 대각화: 3막 ══════════════════════════════════════ -->
+  <section class="act" id="actP" hidden>
+    <div class="act-head">
+      <span class="no">3</span>
+      <h2>대각화와 거듭제곱</h2>
+      <span class="sub">A = P D P⁻¹ 이면 A<sup>k</sup> = P D<sup>k</sup> P⁻¹</span>
+    </div>
+    <div class="flow" id="diagBox"></div>
+    <div class="panel" style="margin-top:22px">
+      <div class="toolbar">
+        <h3 class="mini" style="margin:0">거듭제곱 A<sup>k</sup></h3>
+        <label class="field">k =
+          <input type="range" id="powK" min="1" max="50" value="10" style="width:190px;accent-color:var(--accent)" aria-label="지수 k">
+          <input type="text" id="powKtxt" value="10" style="width:58px" aria-label="지수 k 직접 입력">
+        </label>
+        <span class="meta">1 ~ 200 · 정확한 정수(분수)로 계산합니다</span>
+      </div>
+      <div id="powBox"></div>
+    </div>
+  </section>
+
   <footer class="bot">
-    모든 계산은 이 페이지 안에서 분수로 이루어집니다 · 행 번호는 1부터 셉니다
+    모든 계산은 이 페이지 안에서 분수로 이루어집니다 · 행 번호는 1부터 셉니다 ·
+    대각화는 고유값이 유리수인 행렬을 다룹니다
   </footer>
 </div>
 
@@ -539,7 +591,7 @@ function matHTML(M, opts = {}) {
       if (bar >= 0 && c === bar) cls.push("bar");
       if (pset.has(i + ":" + c)) cls.push("pivot");
       else if (changed && changed.has(i)) cls.push("moved");
-      html += '<span class="' + cls.join(" ") + '">' + fmt(M[i][c]) + "</span>";
+      html += '<span class="' + cls.join(" ") + '">' + (opts.fmt || fmt)(M[i][c]) + "</span>";
     }
   }
   return html + "</span></span>";
@@ -752,6 +804,47 @@ function genInvertible(n, frac) {
   return { n, m: n, grid: grid(unimodular(n, n)) };
 }
 
+/** 대각화 문제는 답(P, D)에서 거꾸로 A = P J P⁻¹ 로 만든다 — 고유값이 정수로 떨어진다. */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = ri(0, i); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function inverseOf(P) { // 유리수 행렬의 역 — [P | I] 를 줄인 오른쪽 절반
+  const n = P.length, I = eye(n);
+  const a = analyze(P.map((row, i) => [...row, ...I[i]]), n, false);
+  return a.rank < n ? null : a.rref.map((r) => r.slice(n));
+}
+function genDiag(n, kind) {
+  if (kind === "repeated") n = Math.max(3, n); // 2×2 에서 중근인데 대각화되면 λI 뿐이다
+  const pool = [-2, -1, 0, 1, 2, 3, 4];
+  const lim = n <= 2 ? 9 : n === 3 ? 12 : 15;
+  for (let t = 0; t < 800; t++) {
+    let lams;
+    if (kind === "distinct" || kind === "frac") lams = shuffle(pool).slice(0, n);
+    else { const s = shuffle(pool); lams = [s[0], s[0], ...s.slice(1, n - 1)]; }
+    const J = lams.map((l, i) => lams.map((_, j) => R(i === j ? l : (kind === "jordan" && i === 0 && j === 1 ? 1 : 0))));
+    let P;
+    if (kind === "frac") {
+      P = Array.from({ length: n }, () => Array.from({ length: n }, () => ri(-2, 2)));
+      if (rankOfInt(P, n) < n) continue;
+    } else P = unimodular(n, n + 1);
+    const Pr = P.map((r) => r.map((v) => R(v)));
+    const inv = inverseOf(Pr);
+    if (!inv) continue;
+    const fracInv = inv.some((r) => r.some((x) => x.d !== 1));
+    if (kind === "frac" ? !fracInv : fracInv) continue;
+    const A = matMul(matMul(Pr, J), inv);
+    if (A.some((r) => r.some((x) => x.d !== 1))) continue;
+    const ints = A.map((r) => r.map((x) => x.n));
+    if (maxAbs(ints) > lim) continue;
+    if (ints.every((r, i) => r.every((v, j) => i === j || v === 0))) continue; // 이미 대각이면 시시하다
+    return { n, m: n, grid: grid(ints) };
+  }
+  if (kind === "jordan") return { n: 2, m: 2, grid: grid([[3, 1], [-1, 1]]) };
+  return { n: 2, m: 2, grid: grid([[2, 1], [1, 2]]) };
+}
+
 const TYPES = {
   solve: {
     "유일해": { make: (n, m) => genUnique(n, m, false), note: "해가 하나뿐이고 계산도 정수로 떨어집니다." },
@@ -766,6 +859,12 @@ const TYPES = {
   inverse: {
     "가역 행렬": { make: (n) => genInvertible(n, false), note: "역행렬이 있는 행렬입니다. 계산도 정수로 떨어집니다." },
     "분수가 나오게": { make: (n) => genInvertible(n, true), note: "중간 계산에 분수가 나오는 가역 행렬입니다." },
+  },
+  diag: {
+    "서로 다른 고유값": { make: (n) => genDiag(n, "distinct"), note: "고유값이 모두 달라 반드시 대각화됩니다. P 와 P⁻¹ 이 정수로 떨어집니다." },
+    "P⁻¹ 에 분수": { make: (n) => genDiag(n, "frac"), note: "고유벡터로 만든 P 의 역행렬에 분수가 나옵니다. 그래도 A 와 Aᵏ 은 정수입니다." },
+    "중근인데 대각화됨": { make: (n) => genDiag(n, "repeated"), note: "같은 고유값이 두 번 나오지만 고유벡터도 두 개 나와 대각화됩니다 (3×3 이상)." },
+    "대각화 불가능": { make: (n) => genDiag(n, "jordan"), note: "중근인데 고유벡터가 하나뿐이라 P 를 만들 수 없는 행렬입니다." },
   },
 };
 
@@ -788,6 +887,12 @@ const PURPOSE = {
     result: "역행렬",
     gridNote: "A 만 적습니다. 오른쪽 단위행렬은 자동으로 붙습니다.",
   },
+  diag: {
+    title: "대각화할 행렬",
+    sub: "정사각행렬 A 하나",
+    result: "",
+    gridNote: "정사각행렬 A 의 성분을 적습니다. 고치면 바로 다시 계산합니다.",
+  },
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -797,7 +902,10 @@ const S = {
   purpose: "solve", type: "유일해", input: "text",
   n: 3, m: 3, vars: [], raw: null, A0: null,
   steps: [], idx: 0, goal: "rref", mode: "auto",
+  diag: null, k: 10,
 };
+/** 정사각행렬만 다루는 목적 */
+const squareOnly = () => S.purpose === "inverse" || S.purpose === "diag";
 /** 계수 칸 오른쪽에 덧붙는 열 수 */
 const extraCols = () => (S.purpose === "solve" ? 1 : S.purpose === "inverse" ? S.n : 0);
 /** 세로 구분선을 그을 열 (없으면 -1) */
@@ -860,6 +968,12 @@ function onGridInput() {
   recompute(true);
 }
 function recompute(jumpToEnd) {
+  if (S.purpose === "diag") {
+    S.steps = []; S.idx = 0;
+    try { S.diag = diagData(S.A0); } catch (e) { S.diag = { error: e.message }; }
+    render();
+    return;
+  }
   if (S.mode === "auto") {
     S.steps = eliminate(S.A0, S.n, S.goal);
     S.idx = jumpToEnd ? S.steps.length : 0;
@@ -908,6 +1022,19 @@ function renderAct1() {
       '<div class="flow-arrow">계수와 우변을 한 판에 적어 두면 소거하기 편하다</div>' +
       '<div class="flow-step"><p class="cap">③ 첨가행렬 [ A | b ] — 2막은 이 행렬 위에서 진행합니다</p>' +
       matHTML(A, { bar: n, pivots: pivotsOf(A, n) }) + "</div>";
+    return;
+  }
+  if (S.purpose === "diag") {
+    box.innerHTML =
+      '<div class="flow-step"><p class="cap">① 정사각행렬 A</p>' + matHTML(A) + "</div>" +
+      '<div class="flow-arrow">방향은 그대로, 길이만 λ배 되는 벡터 — Av = λv — 를 찾아</div>' +
+      '<div class="flow-step"><p class="cap">② 목표: A = P D P⁻¹</p><p class="meta">고유벡터를 열로 세운 행렬을 <b>P</b>, ' +
+      "고유값을 대각선에 놓은 행렬을 <b>D</b> 라 하면 열마다 Av = λv 이므로 <b>AP = PD</b> 입니다. " +
+      "P 의 역행렬이 있으면 A = PDP<sup>−1</sup> — 이것이 <b>대각화</b>입니다.</p></div>" +
+      '<div class="flow-arrow">거듭제곱하면 사이사이의 P⁻¹P 가 모두 I 로 지워져</div>' +
+      '<div class="flow-step"><p class="cap">③ A<sup>k</sup> = P D<sup>k</sup> P⁻¹</p><p class="meta">' +
+      "A<sup>k</sup> = (PDP<sup>−1</sup>)(PDP<sup>−1</sup>)⋯(PDP<sup>−1</sup>) = PD<sup>k</sup>P<sup>−1</sup>. " +
+      "대각행렬의 거듭제곱은 <b>대각 성분만 k제곱</b>하면 되니, 행렬을 k번 곱하는 대신 곱셈 두 번이면 끝납니다.</p></div>";
     return;
   }
   if (S.purpose === "rref") {
@@ -1134,6 +1261,270 @@ function renderProduct() {
 /* ═══════════════════════════════════════════════════════════════
    11. 직접 연산
    ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   10-2. 대각화 — 고유값은 특성다항식의 유리근, 고유벡터는 (A − λI) 를 소거해서
+   ═══════════════════════════════════════════════════════════════ */
+const LAM = "λ";
+const sup = (k) => "<sup>" + k + "</sup>";
+const lcmD = (xs) => xs.reduce((l, x) => l / gcd(l, x.d) * x.d, 1);
+
+/** det(λI − A) 의 계수 (c[i] 가 λ^i 의 계수) — 파데예프–르베리에, 분수 그대로 */
+function charPoly(A) {
+  const n = A.length;
+  const c = Array(n + 1).fill(R(0)); c[n] = R(1);
+  let M = A.map((r) => r.map(() => R(0)));
+  for (let k = 1; k <= n; k++) {
+    M = matMul(A, M).map((row, i) => row.map((x, j) => (i === j ? rAdd(x, c[n - k + 1]) : x)));
+    const AM = matMul(A, M);
+    let tr = R(0);
+    for (let i = 0; i < n; i++) tr = rAdd(tr, AM[i][i]);
+    c[n - k] = rNeg(rDiv(tr, R(k)));
+  }
+  return c;
+}
+function polyEval(c, r) { let s = R(0); for (let i = c.length - 1; i >= 0; i--) s = rAdd(rMul(s, r), c[i]); return s; }
+function deflate(c, r) { // c(λ) ÷ (λ − r), 나머지 0 인 경우만
+  const d = c.length - 1, q = Array(d);
+  q[d - 1] = c[d];
+  for (let i = d - 1; i >= 1; i--) q[i - 1] = rAdd(c[i], rMul(r, q[i]));
+  return q;
+}
+function divisors(N) {
+  const out = [];
+  for (let p = 1; p * p <= N; p++) if (N % p === 0) { out.push(p); if (p * p !== N) out.push(N / p); }
+  return out.sort((a, b) => a - b);
+}
+/** 유리근 정리로 근을 하나씩 찾아 나누어 낸다. 남는 인수(rest)는 유리근이 없다. */
+function rationalRoots(c0) {
+  let c = c0.slice();
+  const roots = [];
+  while (c.length > 1) {
+    if (rZero(c[0])) { roots.push(R(0)); c = c.slice(1); continue; }
+    const L = lcmD(c);
+    const a = c.map((x) => x.n * (L / x.d));
+    const an = Math.abs(a[a.length - 1]);
+    const bound = 1 + Math.max(...a.slice(0, -1).map((v) => Math.abs(v) / an));
+    let found = null;
+    search: for (const q of divisors(an)) for (const p of divisors(Math.abs(a[0]))) {
+      if (p / q > bound) continue;
+      for (const s of [1, -1]) { const r = R(s * p, q); if (rZero(polyEval(c, r))) { found = r; break search; } }
+    }
+    if (!found) break;
+    roots.push(found);
+    c = deflate(c, found);
+  }
+  return { roots, rest: c };
+}
+/** 분모를 없애고 공약수로 나눠 정수 벡터로, 첫 성분은 양수로 */
+function integerize(v) {
+  const L = lcmD(v);
+  let w = v.map((x) => x.n * (L / x.d));
+  const g = w.reduce((g, x) => gcd(g, x), 0) || 1;
+  w = w.map((x) => x / g);
+  if (w.find((x) => x !== 0) < 0) w = w.map((x) => -x);
+  return w.map((x) => R(x));
+}
+function eigenspace(A, lam) {
+  const n = A.length;
+  const B = A.map((row, i) => row.map((x, j) => (i === j ? rSub(x, lam) : x)));
+  const steps = eliminate(B, n, "rref");
+  const a = analyze(B, n, false);
+  const vecs = a.free.map((f) => {
+    const v = Array.from({ length: n }, () => R(0));
+    v[f] = R(1);
+    for (const p of a.pivots) v[p.col] = rNeg(a.rref[p.row][f]);
+    return integerize(v);
+  });
+  return { B, steps, rref: a.rref, vecs };
+}
+function diagData(A) {
+  const n = A.length;
+  const cp = charPoly(A);
+  const { roots, rest } = rationalRoots(cp);
+  const groups = [];
+  for (const r of roots) { const g = groups.find((x) => rEq(x.r, r)); if (g) g.alg++; else groups.push({ r, alg: 1 }); }
+  groups.sort((a, b) => b.r.n / b.r.d - a.r.n / a.r.d);
+  groups.forEach((g) => Object.assign(g, eigenspace(A, g.r)));
+  const allRational = rest.length === 1;
+  const ok = allRational && groups.every((g) => g.vecs.length === g.alg);
+  const out = { n, cp, groups, rest, allRational, ok };
+  if (ok) {
+    const cols = [], lams = [];
+    for (const g of groups) { g.idx = []; for (const v of g.vecs) { g.idx.push(cols.length); cols.push(v); lams.push(g.r); } }
+    out.P = Array.from({ length: n }, (_, i) => cols.map((v) => v[i]));
+    out.D = lams.map((l, i) => lams.map((_, j) => (i === j ? l : R(0))));
+    out.Pinv = inverseOf(out.P);
+    out.lams = lams;
+  }
+  return out;
+}
+
+/* ── 큰 수: 거듭제곱은 BigInt 분수로 (2^53 을 넘어도 정확하게) ── */
+const bgcd = (a, b) => { if (a < 0n) a = -a; if (b < 0n) b = -b; while (b) [a, b] = [b, a % b]; return a || 1n; };
+function BR(n, d = 1n) { if (d < 0n) { n = -n; d = -d; } const g = bgcd(n, d); return { n: n / g, d: d / g }; }
+const bAdd = (a, b) => BR(a.n * b.d + b.n * a.d, a.d * b.d);
+const bMul = (a, b) => BR(a.n * b.n, a.d * b.d);
+const toB = (r) => BR(BigInt(r.n), BigInt(r.d));
+const bPow = (r, k) => BR(r.n ** BigInt(k), r.d ** BigInt(k));
+function bMatMul(A, B) {
+  return A.map((row) => B[0].map((_, j) => row.reduce((s, x, t) => bAdd(s, bMul(x, B[t][j])), BR(0n))));
+}
+function fmtB(r) {
+  const neg = r.n < 0n, n = neg ? -r.n : r.n, sign = neg ? MINUS : "";
+  if (r.d === 1n) return sign + n;
+  return sign + '<span class="frac"><span class="n">' + n + '</span><span class="d">' + r.d + "</span></span>";
+}
+const bEq = (a, b) => a.n === b.n && a.d === b.d;
+
+/* ── 그리기 ── */
+const ident = (s) => s;
+function polyHTML(c) {
+  let s = "", first = true;
+  for (let i = c.length - 1; i >= 0; i--) {
+    const x = c[i];
+    if (rZero(x)) continue;
+    const neg = x.n < 0, abs = neg ? rNeg(x) : x;
+    const body = i === 0 ? fmt(abs) : (rIs(abs, 1) ? "" : fmt(abs)) + LAM + (i > 1 ? sup(i) : "");
+    s += first ? (neg ? MINUS : "") + body : (neg ? " " + MINUS + " " : " + ") + body;
+    first = false;
+  }
+  return s || "0";
+}
+const linHTML = (r) => (rZero(r) ? LAM : "(" + LAM + (r.n > 0 ? " " + MINUS + " " + fmt(r) : " + " + fmt(rNeg(r))) + ")");
+function factorHTML(groups, rest, sign) {
+  const parts = groups.map((g) => linHTML(g.r) + (g.alg > 1 ? sup(g.alg) : ""));
+  if (rest.length > 1) parts.push("(" + polyHTML(rest) + ")");
+  return (sign < 0 ? MINUS : "") + parts.join("");
+}
+/** "A − 3I", "A + 2I", "A" */
+function shiftName(r) {
+  if (rZero(r)) return "A";
+  const abs = r.n > 0 ? r : rNeg(r);
+  const k = rIs(abs, 1) ? "" : abs.d === 1 ? String(abs.n) : "(" + abs.n + "/" + abs.d + ")";
+  return "A " + (r.n > 0 ? MINUS : "+") + " " + k + "I";
+}
+/** λ^k — 음수·분수는 괄호로 */
+function powSym(r, k) {
+  const base = r.n >= 0 && r.d === 1 ? String(r.n) : "(" + (r.n < 0 ? MINUS : "") + Math.abs(r.n) + (r.d === 1 ? "" : "/" + r.d) + ")";
+  return base + sup(k);
+}
+const colHTML = (v, small) => matHTML(v.map((x) => [x]), { small });
+const signSpan = (s) => '<span class="sign">' + s + "</span>";
+
+/** 남은 인수에 유리근이 없을 때 — 2차면 무리수인지 복소수인지까지 */
+function restNote(rest) {
+  if (rest.length === 3) {
+    const [c0, c1] = rest; // 최고차 계수는 1
+    const disc4 = rSub(rMul(R(1, 4), rMul(c1, c1)), c0); // (b² − 4c)/4
+    const mid = fmt(rNeg(rMul(c1, R(1, 2))));
+    if (disc4.n < 0) return "남은 2차식 " + polyHTML(rest) + " 은 판별식이 음수라 <b>복소수 고유값</b> 두 개를 줍니다.";
+    return "남은 2차식 " + polyHTML(rest) + " 의 근은 λ = " + mid + " ± √(" + (disc4.d === 1 ? disc4.n : disc4.n + "/" + disc4.d) +
+      ") 로 <b>무리수</b>입니다.";
+  }
+  return "남은 인수 " + polyHTML(rest) + " 은 유리수 근이 없습니다.";
+}
+
+function renderEig() {
+  const box = el("eigFlow"), d = S.diag, A = S.A0, n = S.n;
+  if (!d || d.error) { box.innerHTML = '<p class="err">계산할 수 없습니다' + (d && d.error ? " — " + esc(d.error) : "") + "</p>"; return; }
+  const sym = A.map((row, i) => row.map((x, j) => (i !== j ? fmt(x) : rZero(x) ? MINUS + LAM : fmt(x) + " " + MINUS + " " + LAM)));
+  const sgn = n % 2 ? -1 : 1; // det(A − λI) = (−1)ⁿ det(λI − A)
+  const cpA = d.cp.map((x) => (sgn < 0 ? rNeg(x) : x));
+  let html = '<div class="flow-step"><p class="cap">① 특성방정식 det(A − λI) = 0</p><div class="lineup">' +
+    signSpan("det") + matHTML(sym, { fmt: ident }) + signSpan("=") + '<span class="poly">' + polyHTML(cpA) + "</span></div>";
+  if (d.groups.length) html += '<p class="poly" style="margin:12px 0 0">= ' + factorHTML(d.groups, d.rest, sgn) + " = 0</p>";
+  html += '<p class="meta" style="margin-top:12px">고유값: ' +
+    (d.groups.length ? d.groups.map((g) => "<code>λ = " + fmt(g.r) + "</code>" + (g.alg > 1 ? " (" + g.alg + "중근)" : "")).join(", ") : "유리수 고유값이 없습니다") +
+    "</p>" + (d.allRational ? "" : '<p class="meta" style="margin-top:6px">' + restNote(d.rest) + "</p>") + "</div>";
+
+  if (d.groups.length) {
+    html += '<div class="flow-arrow">고유값마다 (A − λI)v = 0 을 가우스 소거로 풀면 — 자유변수 하나가 고유벡터 하나</div><div class="flow-step">';
+    let no = 0;
+    for (const g of d.groups) {
+      const name = shiftName(g.r);
+      html += '<div class="eig"><p class="cap">λ = <b>' + fmt(g.r) + "</b> · 특성방정식에서 " + g.alg + "번 · 고유벡터 " + g.vecs.length + "개</p>" +
+        '<div class="lineup">' + tagged(name, matHTML(g.B)) + signSpan("→") +
+        tagged("기약행사다리꼴", matHTML(g.rref, { pivots: pivotsOf(g.rref, n) })) + signSpan("⇒") +
+        g.vecs.map((v) => tagged("v" + subs(++no), colHTML(v), true)).join("") + "</div>";
+      if (g.steps.length) html += '<details class="ops"><summary>행연산 ' + g.steps.length + "단계 보기</summary><ol>" +
+        g.steps.map((s) => "<li>" + opText(s.op) + "</li>").join("") + "</ol></details>";
+      if (g.vecs.length < g.alg) html += '<p class="meta" style="margin-top:8px;color:var(--bad)">' + g.alg +
+        "번 겹친 고유값인데 고유벡터는 " + g.vecs.length + "개뿐입니다.</p>";
+      html += "</div>";
+    }
+    html += "</div>";
+  }
+
+  html += '<div class="flow-arrow">독립인 고유벡터가 ' + n + "개 모이면 대각화된다</div><div class=\"flow-step\">";
+  if (d.ok) html += '<span class="verdict one">대각화할 수 있습니다</span><p class="meta">고유벡터 ' + n + "개가 서로 독립이라 P 를 세울 수 있습니다." +
+    (d.groups.length === n ? " 고유값이 모두 다르면 언제나 이렇습니다." : "") + "</p>";
+  else if (!d.allRational) html += '<span class="verdict many">여기서는 대각화하지 않습니다</span><p class="meta">고유값에 유리수가 아닌 수가 있어 ' +
+    "분수 계산만으로는 P 를 정확히 적을 수 없습니다. 성분을 바꾸거나 [다시 뽑기]를 눌러 보세요. 거듭제곱은 아래에서 직접 곱해 보여 줍니다.</p>";
+  else {
+    const bad = d.groups.filter((g) => g.vecs.length < g.alg);
+    html += '<span class="verdict none">대각화할 수 없습니다</span><p class="meta">' +
+      bad.map((g) => "λ = " + fmt(g.r) + " 은 " + g.alg + "번 겹치는데 고유벡터는 " + g.vecs.length + "개").join(", ") +
+      " — 독립인 고유벡터가 모두 " + d.groups.reduce((s, g) => s + g.vecs.length, 0) + "개라 " + n + "개가 되지 않아, P 가 정사각 가역행렬이 될 수 없습니다.</p>";
+  }
+  box.innerHTML = html + "</div>";
+}
+
+function renderDiag() {
+  const box = el("diagBox"), d = S.diag;
+  if (!d || d.error) { box.innerHTML = ""; return; }
+  if (!d.ok) {
+    box.innerHTML = '<div class="flow-step"><p class="meta">2막에서 본 것처럼 이 행렬은 ' +
+      (d.allRational ? "대각화되지 않습니다" : "이 실습실에서 대각화하지 않습니다") +
+      ". 아래 A<sup>k</sup> 는 A 를 직접 거듭 곱한 값입니다.</p></div>";
+    return;
+  }
+  const A = S.A0, chk = matMul(matMul(d.P, d.D), d.Pinv), chk2 = matMul(matMul(d.Pinv, A), d.P);
+  const same = (X, Y) => X.every((r, i) => r.every((x, j) => rEq(x, Y[i][j])));
+  box.innerHTML =
+    '<div class="flow-step"><p class="cap">① 고유벡터를 열로 세운 P, 고유값을 같은 순서로 대각선에 놓은 D</p><div class="lineup">' +
+    tagged("P = [ v₁ ⋯ v" + subs(d.n) + " ]", matHTML(d.P), true) + tagged("D", matHTML(d.D, { pivots: d.D.map((_, i) => [i, i]) })) +
+    tagged("P⁻¹ ([ P | I ] 를 줄여서)", matHTML(d.Pinv)) + "</div></div>" +
+    '<div class="flow-arrow">AP = PD 의 양변 오른쪽에 P⁻¹ 을 곱하면</div>' +
+    '<div class="flow-step"><p class="cap">② A = P D P⁻¹</p><div class="lineup">' +
+    tagged("P", matHTML(d.P, { small: true })) + signSpan("·") + tagged("D", matHTML(d.D, { small: true })) + signSpan("·") +
+    tagged("P⁻¹", matHTML(d.Pinv, { small: true })) + signSpan("=") + tagged("A", matHTML(chk)) + "</div>" +
+    '<p class="meta" style="margin-top:12px">' + (same(chk, A) ? "곱해서 원래 A 가 되는 것을 확인했습니다." : "확인에 실패했습니다.") +
+    " 거꾸로 P<sup>−1</sup>AP = D " + (same(chk2, d.D) ? "도 성립합니다." : "는 맞지 않습니다.") + "</p></div>";
+}
+
+function renderPower() {
+  const box = el("powBox"), d = S.diag, k = S.k;
+  if (!d || d.error || !S.A0) { box.innerHTML = ""; return; }
+  const Ab = S.A0.map((r) => r.map(toB));
+  let direct = Ab;
+  for (let i = 1; i < k; i++) direct = bMatMul(direct, Ab);
+  const big = (M, small) => matHTML(M, { fmt: fmtB, small });
+
+  if (!d.ok) {
+    box.innerHTML = '<div class="lineup">' + tagged("A" + sup(k) + " (직접 " + (k - 1) + "번 곱함)", big(direct)) + "</div>";
+    return;
+  }
+  const Dk = d.lams.map((l, i) => d.lams.map((_, j) => (i === j ? bPow(toB(l), k) : BR(0n))));
+  const viaDiag = bMatMul(bMatMul(d.P.map((r) => r.map(toB)), Dk), d.Pinv.map((r) => r.map(toB)));
+  const ok = viaDiag.every((r, i) => r.every((x, j) => bEq(x, direct[i][j])));
+  const DkSym = d.lams.map((l, i) => d.lams.map((_, j) => (i === j ? powSym(l, k) : "0")));
+
+  // 일반항: Aᵏ = Σ λᵏ · (P Eλ P⁻¹) — 고유값이 같은 열끼리 묶는다
+  const terms = d.groups.map((g) => {
+    const E = d.lams.map((_, i) => d.lams.map((_, j) => R(i === j && g.idx.includes(i) ? 1 : 0)));
+    return '<span class="poly">' + powSym(g.r, "k") + "</span>" + matHTML(matMul(matMul(d.P, E), d.Pinv), { small: true });
+  });
+
+  box.innerHTML =
+    '<div class="lineup">' + tagged("P", matHTML(d.P, { small: true })) + signSpan("·") +
+    tagged("D" + sup(k), matHTML(DkSym, { fmt: ident, small: true }), true) + signSpan("·") +
+    tagged("P⁻¹", matHTML(d.Pinv, { small: true })) + signSpan("=") + tagged("A" + sup(k), big(viaDiag)) + "</div>" +
+    '<p class="meta" style="margin-top:12px">' + (ok ? "A 를 직접 " + (k - 1) + "번 곱한 결과와 똑같습니다." : "직접 곱한 값과 다릅니다 — 계산을 확인해야 합니다.") +
+    " 직접 곱하면 행렬 곱셈이 " + (k - 1) + "번, 대각화하면 수 " + d.n + "개를 " + k + "제곱하고 행렬 곱셈 2번입니다.</p>" +
+    '<div class="insight"><b>모든 k 에 대한 일반항</b> — D<sup>k</sup> 를 고유값별로 쪼개면 A<sup>k</sup> 가 고정된 행렬들의 일차결합이 됩니다.' +
+    '<div class="lineup" style="margin-top:10px"><span class="poly">A' + sup("k") + " =</span>" + terms.join(signSpan("+")) + "</div></div>";
+}
+
 const rowOptions = (sel) => { sel.innerHTML = Array.from({ length: S.m }, (_, i) => '<option value="' + i + '">' + rowName(i) + "</option>").join(""); };
 function buildOpArgs() {
   const t = el("opType").value, wrap = el("opArgs");
@@ -1184,12 +1575,13 @@ function syncInputPanes() {
     : "칸을 고치면 바로 반영됩니다.";
   el("segInput").querySelectorAll("[data-input]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.input === mode)));
   if (mode === "text") el("eqtext").value = equationsText();
-  el("labM").hidden = S.purpose === "inverse";
-  el("labN").firstChild.textContent = S.purpose === "solve" ? "미지수 " : "열 ";
+  el("labM").hidden = squareOnly();
+  el("labN").firstChild.textContent = S.purpose === "solve" ? "미지수 " : S.purpose === "diag" ? "크기 " : "열 ";
 }
 
 function render() {
   renderAct1();
+  if (S.purpose === "diag") { renderEig(); renderDiag(); renderPower(); return; }
   renderStage();
   renderTape();
   renderSolution();
@@ -1213,7 +1605,7 @@ function generate(type, toEnd) {
   if (!list[type]) type = Object.keys(list)[0];
   S.type = type;
   const p = list[type].make(S.n, S.m);
-  S.n = p.n; S.m = S.purpose === "inverse" ? p.n : p.m;
+  S.n = p.n; S.m = squareOnly() ? p.n : p.m;
   S.vars = defaultVars(S.n);
   S.raw = p.grid.map((r) => r.slice());
   el("selN").value = S.n; el("selM").value = S.m;
@@ -1230,6 +1622,13 @@ function setPurpose(p) {
   S.purpose = p;
   el("purpose").querySelectorAll("[data-purpose]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.purpose === p)));
   if (p === "inverse") { S.goal = "rref"; S.m = S.n; }
+  const isDiag = p === "diag";
+  if (isDiag) { S.n = Math.min(S.n, 4); S.m = S.n; } // 고유값 표가 읽히는 크기까지
+  el("selN").querySelectorAll("option").forEach((o) => { o.disabled = isDiag && +o.value > 4; });
+  el("act2").hidden = el("act3").hidden = isDiag;
+  el("actE").hidden = el("actP").hidden = !isDiag;
+  el("actnav").querySelectorAll("[data-for]").forEach((a) => { a.hidden = (a.dataset.for === "diag") !== isDiag; });
+  el("segInput").hidden = p !== "solve";
   el("segGoal").querySelectorAll("[data-goal]").forEach((x) => {
     x.setAttribute("aria-pressed", String(x.dataset.goal === S.goal));
     x.disabled = p === "inverse" && x.dataset.goal === "ref";
@@ -1280,7 +1679,7 @@ function init() {
     snapshotRaw();
     const old = S.raw, oldEdit = editCols();
     const newN = +el("selN").value;
-    const newM = S.purpose === "inverse" ? newN : +el("selM").value;
+    const newM = squareOnly() ? newN : +el("selM").value;
     const oldN = S.n;
     S.n = newN; S.m = newM;
     const cols = editCols();
@@ -1334,7 +1733,21 @@ function init() {
   }, { rootMargin: "-56px 0px -60% 0px" });
   document.querySelectorAll("section.act").forEach((s) => spy.observe(s));
 
+  const setK = (v, fromRange) => {
+    const k = Math.max(1, Math.min(200, Math.round(+v) || 1));
+    S.k = k;
+    if (!fromRange) el("powK").value = Math.min(50, k);
+    el("powKtxt").value = k;
+    renderPower();
+  };
+  el("powK").addEventListener("input", (e) => setK(e.target.value, true));
+  el("powKtxt").addEventListener("change", (e) => setK(e.target.value, false));
+  el("powKtxt").addEventListener("keydown", (e) => { if (e.key === "Enter") setK(e.target.value, false); });
+
   renderLegend();
+  // ?p=diag 처럼 주소로 목적을 고를 수 있다 (수업 자료에 바로 거는 링크)
+  const want = new URLSearchParams(location.search).get("p");
+  if (want && TYPES[want] && want !== "solve") { setPurpose(want); return; }
   refreshTypes();
   // 처음 열 때는 다 푼 모습으로 — 이후 [다시 뽑기]는 0단계에서 시작한다.
   generate("유일해", true);
